@@ -35,6 +35,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { VenueMap } from '@/components/venue-map';
 import VolunteerLayout from '@/layouts/VolunteerLayout';
 
 type ShiftRow = {
@@ -729,6 +730,27 @@ export default function Workspace({
                                         {gpsMessage}
                                     </p>
                                 </div>
+
+                                <VenueMap
+                                    mode="checkin"
+                                    venueLat={division.event.venue_lat}
+                                    venueLng={division.event.venue_lng}
+                                    radiusMeters={
+                                        division.event.checkin_radius_meters
+                                    }
+                                    venueName={division.event.venue_name}
+                                    userLat={
+                                        checkInForm.data.lat
+                                            ? Number(checkInForm.data.lat)
+                                            : null
+                                    }
+                                    userLng={
+                                        checkInForm.data.lng
+                                            ? Number(checkInForm.data.lng)
+                                            : null
+                                    }
+                                    heightClass="h-44"
+                                />
 
                                 <form
                                     onSubmit={handleCheckIn}

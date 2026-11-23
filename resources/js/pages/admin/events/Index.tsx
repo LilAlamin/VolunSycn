@@ -43,6 +43,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { VenueMap } from '@/components/venue-map';
 import AdminLayout from '@/layouts/AdminLayout';
 
 type CoordinatorOption = {
@@ -484,46 +485,83 @@ export default function EventsIndex({
                                 </Select>
                             </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                            <div className="space-y-1">
-                                <Label>Latitude</Label>
-                                <Input
-                                    required
-                                    value={eventForm.data.venue_lat}
-                                    onChange={(e) =>
-                                        eventForm.setData(
-                                            'venue_lat',
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Longitude</Label>
-                                <Input
-                                    required
-                                    value={eventForm.data.venue_lng}
-                                    onChange={(e) =>
-                                        eventForm.setData(
-                                            'venue_lng',
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Radius (m)</Label>
-                                <Input
-                                    type="number"
-                                    required
-                                    value={eventForm.data.checkin_radius_meters}
-                                    onChange={(e) =>
-                                        eventForm.setData(
-                                            'checkin_radius_meters',
-                                            e.target.value,
-                                        )
-                                    }
-                                />
+                        {/* Interactive OpenStreetMap Venue & Geofence Picker */}
+                        <div className="space-y-2 rounded-xl border border-border bg-surface/50 p-3">
+                            <Label>
+                                Venue Location & Geofence (OpenStreetMap)
+                            </Label>
+                            <VenueMap
+                                mode="picker"
+                                venueLat={Number(eventForm.data.venue_lat)}
+                                venueLng={Number(eventForm.data.venue_lng)}
+                                radiusMeters={Number(
+                                    eventForm.data.checkin_radius_meters,
+                                )}
+                                venueName={eventForm.data.venue_name}
+                                onLocationChange={(lat, lng, suggestedName) => {
+                                    eventForm.setData((prev) => ({
+                                        ...prev,
+                                        venue_lat: String(lat),
+                                        venue_lng: String(lng),
+                                        venue_name:
+                                            !prev.venue_name.trim() &&
+                                            suggestedName
+                                                ? suggestedName
+                                                : prev.venue_name,
+                                    }));
+                                }}
+                                heightClass="h-52"
+                            />
+                            <div className="grid grid-cols-3 gap-3 pt-1">
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Latitude</Label>
+                                    <Input
+                                        required
+                                        className="font-mono text-xs"
+                                        value={eventForm.data.venue_lat}
+                                        onChange={(e) =>
+                                            eventForm.setData(
+                                                'venue_lat',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Longitude</Label>
+                                    <Input
+                                        required
+                                        className="font-mono text-xs"
+                                        value={eventForm.data.venue_lng}
+                                        onChange={(e) =>
+                                            eventForm.setData(
+                                                'venue_lng',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">
+                                        Radius (m)
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        min={20}
+                                        max={5000}
+                                        required
+                                        className="font-mono text-xs"
+                                        value={
+                                            eventForm.data.checkin_radius_meters
+                                        }
+                                        onChange={(e) =>
+                                            eventForm.setData(
+                                                'checkin_radius_meters',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">

@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { VenueMap } from '@/components/venue-map';
 import VolunteerLayout from '@/layouts/VolunteerLayout';
 
 type AssignedShift = {
@@ -272,6 +273,26 @@ export default function CheckIn({ assignedShifts, totalVerifiedHours }: Props) {
                                 {gpsMessage}
                             </p>
                         </div>
+
+                        {assignedShifts[0] && (
+                            <VenueMap
+                                mode="checkin"
+                                venueLat={assignedShifts[0].event.venue_lat}
+                                venueLng={assignedShifts[0].event.venue_lng}
+                                radiusMeters={
+                                    assignedShifts[0].event
+                                        .checkin_radius_meters
+                                }
+                                venueName={assignedShifts[0].event.venue_name}
+                                userLat={
+                                    form.data.lat ? Number(form.data.lat) : null
+                                }
+                                userLng={
+                                    form.data.lng ? Number(form.data.lng) : null
+                                }
+                                heightClass="h-44"
+                            />
+                        )}
 
                         <form onSubmit={handleCheckIn} className="space-y-4">
                             <div className="space-y-1.5">
