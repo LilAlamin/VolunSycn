@@ -3,8 +3,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AuthLayout from '@/layouts/auth-layout';
+import ConsoleLayout from '@/layouts/console-layout';
 import SettingsLayout from '@/layouts/settings/layout';
-import VolunteerLayout from '@/layouts/VolunteerLayout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'VolunSync';
 
@@ -15,7 +15,7 @@ void createInertiaApp({
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
-                return [VolunteerLayout, SettingsLayout];
+                return [ConsoleLayout, SettingsLayout];
             default:
                 return null;
         }

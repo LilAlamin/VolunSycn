@@ -14,6 +14,14 @@ export type User = {
     avatar_url?: string | null;
     avatar?: string;
     bio?: string | null;
+    city?: string | null;
+    address?: string | null;
+    date_of_birth?: string | null;
+    emergency_contact_name?: string | null;
+    emergency_contact_phone?: string | null;
+    skills?: string | null;
+    profile_verified_at?: string | null;
+    is_profile_verified?: boolean;
     email_verified_at: string | null;
     roles?: string[];
     verified_hours?: number;

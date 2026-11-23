@@ -4,6 +4,8 @@ namespace Tests\Feature\Settings;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
@@ -138,5 +140,37 @@ class ProfileUpdateTest extends TestCase
             ->assertRedirect(route('profile.edit'));
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_volunteer_can_upload_avatar_and_verify_profile_details()
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => 'Nadia Verified',
+                'email' => $user->email,
+                'phone' => '+62 812-3456-7890',
+                'city' => 'Surakarta',
+                'address' => 'Jl. Slamet Riyadi No. 100',
+                'date_of_birth' => '2004-05-14',
+                'emergency_contact_name' => 'Hendra (Father)',
+                'emergency_contact_phone' => '+62 812-9988-7766',
+                'skills' => 'First Aid, Logistics',
+                'avatar' => UploadedFile::fake()->image('portrait.jpg', 300, 300),
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('profile.edit'));
+
+        $user->refresh();
+
+        $this->assertNotNull($user->profile_verified_at);
+        $this->assertTrue($user->hasCompleteVerificationProfile());
+        $this->assertStringStartsWith('/storage/avatars/', $user->avatar_url);
+        Storage::disk('public')->assertExists(substr($user->avatar_url, strlen('/storage/')));
     }
 }

@@ -25,6 +25,13 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $phone
  * @property string|null $avatar_url
  * @property string|null $bio
+ * @property string|null $city
+ * @property string|null $address
+ * @property Carbon|null $date_of_birth
+ * @property string|null $emergency_contact_name
+ * @property string|null $emergency_contact_phone
+ * @property string|null $skills
+ * @property Carbon|null $profile_verified_at
  * @property string|null $organization_name
  * @property string|null $organization_description
  * @property int|null $created_by_organizer_id
@@ -44,6 +51,13 @@ use Spatie\Permission\Traits\HasRoles;
     'phone',
     'avatar_url',
     'bio',
+    'city',
+    'address',
+    'date_of_birth',
+    'emergency_contact_name',
+    'emergency_contact_phone',
+    'skills',
+    'profile_verified_at',
     'organization_name',
     'organization_description',
     'created_by_organizer_id',
@@ -63,11 +77,22 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'date_of_birth' => 'date:Y-m-d',
+            'profile_verified_at' => 'datetime',
             'password' => 'hashed',
             /* @chisel-2fa */
             'two_factor_confirmed_at' => 'datetime',
             /* @end-chisel-2fa */
         ];
+    }
+
+    public function hasCompleteVerificationProfile(): bool
+    {
+        return filled($this->phone)
+            && filled($this->city)
+            && filled($this->address)
+            && filled($this->emergency_contact_name)
+            && filled($this->emergency_contact_phone);
     }
 
     /**

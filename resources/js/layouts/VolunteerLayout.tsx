@@ -1,7 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     Award,
+    BadgeCheck,
     Briefcase,
+    ChevronRight,
     ClipboardList,
     Compass,
     FolderKanban,
@@ -9,12 +11,11 @@ import {
     LogOut,
     Menu,
     Moon,
-    Settings,
     Sun,
     X,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { VolunSyncLogo } from '@/components/volunsync-logo';
@@ -182,43 +183,101 @@ export default function VolunteerLayout({
                 )}
             </div>
 
-            {/* Account & Admin Switch */}
-            <div className="pt-4">
-                <p className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                    Account
-                </p>
-                <Link
-                    href="/settings/profile"
-                    onClick={onNavigate}
-                    className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                        currentPath.startsWith('/settings')
-                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                            : 'text-sidebar-foreground hover:bg-sidebar-accent',
-                    )}
-                >
-                    <Settings className="size-4" />
-                    <span>Profile Settings</span>
-                </Link>
-                {isAdmin && (
+            {isAdmin && (
+                <div className="pt-4">
+                    <p className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                        Switch Console
+                    </p>
                     <Link
                         href="/admin/dashboard"
                         onClick={onNavigate}
-                        className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
                     >
                         <LayoutDashboard className="size-4" />
-                        <span>Switch to Admin Console</span>
+                        <span>Admin Console</span>
                     </Link>
-                )}
-            </div>
+                </div>
+            )}
         </nav>
+    );
+
+    const profileCard = (onNavigate?: () => void) => (
+        <div className="border-t border-sidebar-border p-3">
+            <Link
+                href="/settings/profile"
+                onClick={onNavigate}
+                title="Click to edit profile & verify volunteer details"
+                className={cn(
+                    'group flex items-center gap-3 rounded-xl border bg-card p-2.5 shadow-xs transition-all hover:border-primary/40 hover:bg-accent/50',
+                    currentPath.startsWith('/settings')
+                        ? 'border-primary bg-accent/60'
+                        : 'border-border/70',
+                )}
+            >
+                <Avatar className="size-9 shrink-0 ring-1 ring-border">
+                    {user?.avatar_url && (
+                        <AvatarImage
+                            src={user.avatar_url}
+                            alt={user.name}
+                            className="object-cover"
+                        />
+                    )}
+                    <AvatarFallback className="bg-soft text-xs font-semibold text-soft-foreground">
+                        {initials}
+                    </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                        <p className="truncate text-sm font-semibold group-hover:text-primary">
+                            {user?.name}
+                        </p>
+                        {user?.is_profile_verified && (
+                            <BadgeCheck className="size-3.5 shrink-0 text-primary" />
+                        )}
+                    </div>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                        {user?.is_profile_verified
+                            ? 'Verified · Edit profile'
+                            : 'Complete profile to verify'}
+                    </p>
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+            </Link>
+
+            <div className="mt-2 flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={toggleDark}
+                >
+                    {appearance === 'dark' ? (
+                        <Sun className="mr-1.5 size-3.5" />
+                    ) : (
+                        <Moon className="mr-1.5 size-3.5" />
+                    )}
+                    {appearance === 'dark' ? 'Light' : 'Dark'}
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="text-destructive hover:text-destructive"
+                    title="Sign out"
+                >
+                    <Link href="/logout" method="post" as="button">
+                        <LogOut className="size-4" />
+                    </Link>
+                </Button>
+            </div>
+        </div>
     );
 
     return (
         <div className="flex min-h-screen bg-background text-foreground">
-            {/* Desktop Volunteer Sidebar */}
-            <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-                <div className="flex h-16 items-center border-b border-sidebar-border px-5">
+            {/* Fixed-Height Sticky Desktop Volunteer Sidebar */}
+            <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+                <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-5">
                     <Link href="/">
                         <VolunSyncLogo
                             variant="mark"
@@ -228,49 +287,7 @@ export default function VolunteerLayout({
                 </div>
 
                 {sidebarNavContent()}
-
-                <div className="border-t border-sidebar-border p-3">
-                    <div className="flex items-center gap-3 rounded-lg bg-card p-2.5 shadow-xs ring-1 ring-border/60">
-                        <Avatar className="size-9">
-                            <AvatarFallback className="bg-soft text-xs font-semibold text-soft-foreground">
-                                {initials}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold">
-                                {user?.name}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                                {user?.email}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={toggleDark}
-                        >
-                            {appearance === 'dark' ? (
-                                <Sun className="mr-1.5 size-3.5" />
-                            ) : (
-                                <Moon className="mr-1.5 size-3.5" />
-                            )}
-                            {appearance === 'dark' ? 'Light' : 'Dark'}
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                            className="text-destructive hover:text-destructive"
-                        >
-                            <Link href="/logout" method="post" as="button">
-                                <LogOut className="size-4" />
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
+                {profileCard()}
             </aside>
 
             {/* Mobile Drawer */}
@@ -280,8 +297,8 @@ export default function VolunteerLayout({
                         className="fixed inset-0 bg-black/50"
                         onClick={() => setMobileOpen(false)}
                     />
-                    <aside className="relative z-10 flex w-72 flex-col bg-sidebar shadow-xl">
-                        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+                    <aside className="relative z-10 flex h-full w-72 flex-col bg-sidebar shadow-xl">
+                        <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
                             <VolunSyncLogo
                                 variant="mark"
                                 subtitle="Volunteer Console"
@@ -295,19 +312,7 @@ export default function VolunteerLayout({
                             </Button>
                         </div>
                         {sidebarNavContent(() => setMobileOpen(false))}
-                        <div className="border-t border-sidebar-border p-3">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start text-destructive"
-                                asChild
-                            >
-                                <Link href="/logout" method="post" as="button">
-                                    <LogOut className="mr-2 size-4" />
-                                    Sign out
-                                </Link>
-                            </Button>
-                        </div>
+                        {profileCard(() => setMobileOpen(false))}
                     </aside>
                 </div>
             )}

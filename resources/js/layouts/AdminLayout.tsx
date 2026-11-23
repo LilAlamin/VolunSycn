@@ -1,6 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BadgeCheck,
     CalendarDays,
+    ChevronRight,
     ClipboardCheck,
     Clock,
     Compass,
@@ -15,7 +17,7 @@ import {
     X,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { VolunSyncLogo } from '@/components/volunsync-logo';
@@ -106,16 +108,16 @@ export default function AdminLayout({
 
     return (
         <div className="flex min-h-screen bg-background text-foreground">
-            {/* Desktop Sidebar */}
-            <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-                <div className="flex h-16 items-center border-b border-sidebar-border px-5">
+            {/* Fixed-Height Sticky Desktop Sidebar */}
+            <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+                <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-5">
                     <VolunSyncLogo
                         variant="mark"
                         subtitle={`${roleLabel} Console`}
                     />
                 </div>
 
-                <nav className="flex-1 space-y-1 p-3">
+                <nav className="flex-1 space-y-1 overflow-y-auto p-3">
                     <p className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
                         Operations
                     </p>
@@ -165,21 +167,43 @@ export default function AdminLayout({
                 </nav>
 
                 <div className="border-t border-sidebar-border p-3">
-                    <div className="flex items-center gap-3 rounded-lg bg-card p-2.5 shadow-xs">
-                        <Avatar className="size-9">
+                    <Link
+                        href="/settings/profile"
+                        title="Click to edit profile"
+                        className={cn(
+                            'group flex items-center gap-3 rounded-xl border bg-card p-2.5 shadow-xs transition-all hover:border-primary/40 hover:bg-accent/50',
+                            currentPath.startsWith('/settings')
+                                ? 'border-primary bg-accent/60'
+                                : 'border-border/70',
+                        )}
+                    >
+                        <Avatar className="size-9 shrink-0 ring-1 ring-border">
+                            {user?.avatar_url && (
+                                <AvatarImage
+                                    src={user.avatar_url}
+                                    alt={user.name}
+                                    className="object-cover"
+                                />
+                            )}
                             <AvatarFallback className="bg-soft text-xs font-semibold text-soft-foreground">
                                 {initials}
                             </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold">
-                                {user?.name}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                                {user?.email}
+                            <div className="flex items-center gap-1">
+                                <p className="truncate text-sm font-semibold group-hover:text-primary">
+                                    {user?.name}
+                                </p>
+                                {user?.is_profile_verified && (
+                                    <BadgeCheck className="size-3.5 shrink-0 text-primary" />
+                                )}
+                            </div>
+                            <p className="truncate text-[11px] text-muted-foreground">
+                                Edit profile & settings
                             </p>
                         </div>
-                    </div>
+                        <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                    </Link>
                     <div className="mt-2 flex items-center gap-2">
                         <Button
                             variant="outline"

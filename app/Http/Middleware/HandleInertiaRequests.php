@@ -64,6 +64,7 @@ class HandleInertiaRequests extends Middleware
                     ...$user->toArray(),
                     'roles' => $user->getRoleNames()->values()->all(),
                     'verified_hours' => $user->totalVerifiedHours(),
+                    'is_profile_verified' => $user->profile_verified_at !== null || $user->hasCompleteVerificationProfile(),
                     'accepted_divisions' => $acceptedDivisions,
                 ] : null,
             ],
