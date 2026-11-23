@@ -124,3 +124,4 @@ Test suites added for VolunSync (`tests/Feature/VolunSync/`):
 - **Offline Check-In Auto-Sync:** `Workspace.tsx` & `CheckIn.tsx` save offline payloads to `localStorage`; you can add an automatic `online` listener / "Sync Pending Check-In" button to flush queued check-ins when connectivity returns.
 - **Duplicate Event Structure Button:** Add a 1-click "Duplicate Event + Divisions" action in `Admin\EventController` & `admin/events/Index.tsx` to match proposal Sec 6.3.3.
 - **Production DBMS Switch:** Update `.env` from `sqlite` to `mysql` or `pgsql` if deploying to production.
+
