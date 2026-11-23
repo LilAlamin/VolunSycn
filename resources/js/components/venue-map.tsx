@@ -399,7 +399,10 @@ export function VenueMap({
                                         : 'bg-destructive/15 text-destructive'
                                 }
                             >
-                                {distanceMeters}m away ·{' '}
+                                {distanceMeters >= 1000
+                                    ? `${(distanceMeters / 1000).toFixed(2)} km`
+                                    : `${distanceMeters}m`}{' '}
+                                away ·{' '}
                                 {distanceMeters <= safeRadius
                                     ? 'Inside Geofence ✓'
                                     : 'Outside Radius'}
