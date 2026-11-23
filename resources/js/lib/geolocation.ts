@@ -14,7 +14,10 @@ function getPositionPromise(
     });
 }
 
-async function fetchIpFallback(permissionDenied: boolean): Promise<GeoDetectionResult | null> {
+async function fetchIpFallback(
+    permissionDenied: boolean,
+    rawReason?: string,
+): Promise<GeoDetectionResult | null> {
     const endpoints = [
         async () => {
             const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
@@ -48,15 +51,25 @@ async function fetchIpFallback(permissionDenied: boolean): Promise<GeoDetectionR
         try {
             const found = await lookup();
             if (found) {
+                const isInsecureOrigin =
+                    typeof window !== 'undefined' &&
+                    !window.isSecureContext &&
+                    window.location.hostname === '127.0.0.1';
+                const reasonHint = isInsecureOrigin
+                    ? 'Open via http://localhost:8000 (Chrome blocks GPS on non-HTTPS 127.0.0.1).'
+                    : rawReason?.toLowerCase().includes('denied')
+                      ? 'Check macOS System Settings -> Privacy & Security -> Location Services -> Google Chrome.'
+                      : 'Allow browser & OS Location access for exact GPS.';
+
                 const prefix = permissionDenied
-                    ? 'Browser GPS blocked — using approx. network location'
+                    ? 'Device GPS unavailable — using approx. network location'
                     : 'Approx. network location';
                 return {
                     lat: Number(found.lat.toFixed(6)),
                     lng: Number(found.lng.toFixed(6)),
                     accuracyMeters: null,
                     source: 'ip',
-                    label: `${prefix}${found.city ? ` (${found.city})` : ''}: ${found.lat.toFixed(5)}, ${found.lng.toFixed(5)}. Allow browser Location for exact GPS.`,
+                    label: `${prefix}${found.city ? ` (${found.city})` : ''}: ${found.lat.toFixed(5)}, ${found.lng.toFixed(5)}. ${reasonHint}`,
                 };
             }
         } catch {
@@ -69,6 +82,7 @@ async function fetchIpFallback(permissionDenied: boolean): Promise<GeoDetectionR
 
 export async function detectUserCoordinates(): Promise<GeoDetectionResult> {
     let permissionDenied = false;
+    let rawReason: string | undefined;
 
     if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
         try {
@@ -88,6 +102,7 @@ export async function detectUserCoordinates(): Promise<GeoDetectionResult> {
         } catch (err) {
             const geoErr = err as GeolocationPositionError | undefined;
             permissionDenied = geoErr?.code === 1;
+            rawReason = geoErr?.message;
 
             if (!permissionDenied) {
                 try {
@@ -107,13 +122,14 @@ export async function detectUserCoordinates(): Promise<GeoDetectionResult> {
                 } catch (lowErr) {
                     const lowGeoErr = lowErr as GeolocationPositionError | undefined;
                     permissionDenied = lowGeoErr?.code === 1;
+                    rawReason = lowGeoErr?.message ?? rawReason;
                 }
             }
         }
     }
 
     // Fallback to IP geolocation even when browser GPS permission is blocked on desktop
-    const ipResult = await fetchIpFallback(permissionDenied);
+    const ipResult = await fetchIpFallback(permissionDenied, rawReason);
     if (ipResult) {
         return ipResult;
     }
