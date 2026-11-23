@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { detectUserCoordinates } from '@/lib/geolocation';
 
 type NominatimResult = {
     place_id: number;
@@ -80,6 +81,7 @@ export function VenueMap({
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searching, setSearching] = useState(false);
+    const [locating, setLocating] = useState(false);
     const [results, setResults] = useState<NominatimResult[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -149,11 +151,19 @@ export function VenueMap({
         venueMarkerRef.current = venueMarker;
         circleRef.current = circle;
 
-        // Ensure tiles fit cleanly inside dialogs/tabs
+        // Ensure tiles fit cleanly inside dialogs/tabs including hidden-to-visible transitions
         const timer = window.setTimeout(() => map.invalidateSize(), 150);
+        const resizeObserver =
+            typeof ResizeObserver !== 'undefined' && containerRef.current
+                ? new ResizeObserver(() => map.invalidateSize())
+                : null;
+        if (resizeObserver && containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
 
         return () => {
             window.clearTimeout(timer);
+            resizeObserver?.disconnect();
             map.remove();
             mapRef.current = null;
             venueMarkerRef.current = null;
@@ -264,18 +274,22 @@ export function VenueMap({
         }
     };
 
-    const locateOrganizer = () => {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition((pos) => {
-            onLocationChange?.(
-                Number(pos.coords.latitude.toFixed(6)),
-                Number(pos.coords.longitude.toFixed(6)),
+    const locateOrganizer = async () => {
+        setLocating(true);
+        setSearchError(null);
+        try {
+            const loc = await detectUserCoordinates();
+            onLocationChange?.(loc.lat, loc.lng);
+            mapRef.current?.setView([loc.lat, loc.lng], 16);
+        } catch (err) {
+            setSearchError(
+                err instanceof Error
+                    ? err.message
+                    : 'Unable to detect your GPS location.',
             );
-            mapRef.current?.setView(
-                [pos.coords.latitude, pos.coords.longitude],
-                16,
-            );
-        });
+        } finally {
+            setLocating(false);
+        }
     };
 
     return (
@@ -314,11 +328,12 @@ export function VenueMap({
                             size="sm"
                             variant="outline"
                             className="h-8 text-xs"
-                            onClick={locateOrganizer}
+                            disabled={locating}
+                            onClick={() => void locateOrganizer()}
                             title="Use my current GPS"
                         >
                             <LocateFixed className="mr-1 size-3.5" />
-                            My GPS
+                            {locating ? 'Locating...' : 'My GPS'}
                         </Button>
                     </div>
 
@@ -412,3 +427,4 @@ export function VenueMap({
         </div>
     );
 }
+

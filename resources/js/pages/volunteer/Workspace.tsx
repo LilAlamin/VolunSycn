@@ -37,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VenueMap } from '@/components/venue-map';
 import VolunteerLayout from '@/layouts/VolunteerLayout';
+import { detectUserCoordinates } from '@/lib/geolocation';
 
 type ShiftRow = {
     id: number;
@@ -192,31 +193,39 @@ export default function Workspace({
         });
     }, [documents, docScope, docSearch]);
 
-    const captureLocation = () => {
-        if (!navigator.geolocation) {
-            setGpsStatus('error');
-            setGpsMessage('Geolocation is not supported by this browser.');
-            return;
-        }
+    const captureLocation = async () => {
         setGpsStatus('locating');
-        setGpsMessage('Acquiring GPS coordinates...');
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = pos.coords.latitude.toFixed(6);
-                const lng = pos.coords.longitude.toFixed(6);
-                checkInForm.setData((prev) => ({ ...prev, lat, lng }));
-                setGpsStatus('locked');
-                setGpsMessage(
-                    `GPS locked: ${lat}, ${lng} (±${Math.round(pos.coords.accuracy)}m)`,
-                );
-            },
-            (err) => {
-                setGpsStatus('error');
-                setGpsMessage(`GPS unavailable: ${err.message}`);
-            },
-            { enableHighAccuracy: true, timeout: 10000 },
-        );
+        setGpsMessage('Detecting your GPS coordinates...');
+        try {
+            const loc = await detectUserCoordinates();
+            checkInForm.setData((prev) => ({
+                ...prev,
+                lat: String(loc.lat),
+                lng: String(loc.lng),
+            }));
+            setGpsStatus('locked');
+            setGpsMessage(loc.label);
+        } catch (err) {
+            setGpsStatus('error');
+            setGpsMessage(
+                err instanceof Error
+                    ? err.message
+                    : 'Unable to detect GPS coordinates.',
+            );
+        }
     };
+
+    // Auto-detect GPS when volunteer opens Shifts & QR Check-In tab
+    useEffect(() => {
+        if (
+            activeTab === 'shifts' &&
+            gpsStatus === 'idle' &&
+            !checkInForm.data.lat &&
+            !checkInForm.data.lng
+        ) {
+            void captureLocation();
+        }
+    }, [activeTab]);
 
     const startScanner = async () => {
         setCameraError(null);
@@ -715,10 +724,13 @@ export default function Workspace({
                                             type="button"
                                             variant="secondary"
                                             size="sm"
-                                            onClick={captureLocation}
+                                            disabled={gpsStatus === 'locating'}
+                                            onClick={() => void captureLocation()}
                                         >
                                             <LocateFixed className="mr-1.5 size-4" />
-                                            Capture GPS
+                                            {gpsStatus === 'locating'
+                                                ? 'Detecting...'
+                                                : 'Refresh GPS'}
                                         </Button>
                                     </div>
                                     {cameraError && (
