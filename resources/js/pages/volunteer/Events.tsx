@@ -1,7 +1,8 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
-    ArrowUpRight,
+    ArrowRight,
+    Building2,
     CalendarDays,
     CheckCircle2,
     Layers,
@@ -77,11 +78,22 @@ export default function Events({ events }: Props) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const isLoggedIn = Boolean(auth?.user);
 
+    const initialEventId = useMemo(() => {
+        if (typeof window === 'undefined') return null;
+        const param = new URLSearchParams(window.location.search).get('event');
+        const parsed = param ? Number(param) : NaN;
+        return Number.isFinite(parsed) && events.some((e) => e.id === parsed)
+            ? parsed
+            : null;
+    }, [events]);
+
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<
         'all' | 'ongoing' | 'open'
     >('all');
-    const [activeEventId, setActiveEventId] = useState<number | null>(null);
+    const [activeEventId, setActiveEventId] = useState<number | null>(
+        initialEventId,
+    );
 
     const [selectedDivision, setSelectedDivision] = useState<{
         eventTitle: string;
@@ -108,6 +120,7 @@ export default function Events({ events }: Props) {
                 return (
                     ev.title.toLowerCase().includes(q) ||
                     ev.venue_name.toLowerCase().includes(q) ||
+                    ev.organizer_name.toLowerCase().includes(q) ||
                     ev.description.toLowerCase().includes(q) ||
                     ev.divisions.some((d) => d.name.toLowerCase().includes(q))
                 );
@@ -144,36 +157,37 @@ export default function Events({ events }: Props) {
                         <Button
                             variant="outline"
                             size="sm"
-                            className="rounded-full"
                             onClick={() => setActiveEventId(null)}
                         >
                             <ArrowLeft className="mr-1.5 size-4" />
-                            Back to All Events
+                            All Events
                         </Button>
 
-                        <Badge
-                            className={
-                                activeEvent.status === 'ongoing'
-                                    ? 'bg-highlight text-highlight-foreground'
-                                    : 'bg-soft text-soft-foreground'
-                            }
-                        >
-                            {activeEvent.status === 'ongoing'
-                                ? 'Ongoing Now'
-                                : 'Open for Registration'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                                <Building2 className="mr-1 size-3 text-primary" />
+                                {activeEvent.organizer_name}
+                            </Badge>
+                            <Badge
+                                className={
+                                    activeEvent.status === 'ongoing'
+                                        ? 'bg-highlight text-highlight-foreground'
+                                        : 'bg-soft text-soft-foreground'
+                                }
+                            >
+                                {activeEvent.status === 'ongoing'
+                                    ? 'Ongoing Now'
+                                    : 'Open for Registration'}
+                            </Badge>
+                        </div>
                     </div>
 
                     <Card className="border-border shadow-panel">
                         <CardHeader className="border-b border-border pb-5">
-                            <p className="font-mono text-xs text-primary uppercase">
-                                [ Event Detail · {activeEvent.divisions.length}{' '}
-                                Divisions ]
-                            </p>
-                            <CardTitle className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                            <CardTitle className="text-2xl font-bold tracking-tight">
                                 {activeEvent.title}
                             </CardTitle>
-                            <CardDescription className="mt-2 max-w-3xl text-sm leading-relaxed">
+                            <CardDescription className="mt-1.5 max-w-3xl text-sm leading-relaxed">
                                 {activeEvent.description}
                             </CardDescription>
 
@@ -203,19 +217,19 @@ export default function Events({ events }: Props) {
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <Users className="size-3.5 text-primary" />
-                                    Organized by {activeEvent.organizer_name}
+                                    Hosted by {activeEvent.organizer_name}
                                 </span>
                             </div>
                         </CardHeader>
 
                         <CardContent className="pt-6">
                             <div className="mb-4 flex items-center justify-between">
-                                <h2 className="font-mono text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                     Available Divisions (
                                     {activeEvent.divisions.length})
                                 </h2>
                                 <span className="text-xs text-muted-foreground">
-                                    Choose a division to apply
+                                    Select a division to submit your application
                                 </span>
                             </div>
 
@@ -309,7 +323,7 @@ export default function Events({ events }: Props) {
                                                 ) : isLoggedIn ? (
                                                     <Button
                                                         size="sm"
-                                                        className="w-full rounded-full"
+                                                        className="w-full"
                                                         disabled={isFull}
                                                         onClick={() =>
                                                             openApplyModal(
@@ -327,7 +341,7 @@ export default function Events({ events }: Props) {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="w-full rounded-full"
+                                                        className="w-full"
                                                         asChild
                                                     >
                                                         <Link href="/login">
@@ -344,15 +358,14 @@ export default function Events({ events }: Props) {
                     </Card>
                 </div>
             ) : (
-                /* EVENT CARDS CATALOG VIEW (Per Event First) */
+                /* CLEAN EVENT CATALOG GRID */
                 <div className="space-y-6">
-                    {/* Search & Status Filter Bar */}
-                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                    <div className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-xs sm:flex-row sm:items-center">
                         <div className="relative w-full sm:max-w-sm">
                             <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
                             <Input
-                                className="rounded-full bg-card pl-9"
-                                placeholder="Search events, venues, or divisions..."
+                                className="border-0 bg-surface pl-9 shadow-none focus-visible:ring-1"
+                                placeholder="Search events, organizations, or divisions..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
@@ -361,7 +374,10 @@ export default function Events({ events }: Props) {
                         <div className="flex items-center gap-1.5">
                             {(
                                 [
-                                    { key: 'all', label: 'All Events' },
+                                    {
+                                        key: 'all',
+                                        label: `All (${events.length})`,
+                                    },
                                     { key: 'ongoing', label: 'Ongoing' },
                                     { key: 'open', label: 'Open' },
                                 ] as const
@@ -370,10 +386,10 @@ export default function Events({ events }: Props) {
                                     key={tab.key}
                                     type="button"
                                     onClick={() => setStatusFilter(tab.key)}
-                                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                                         statusFilter === tab.key
-                                            ? 'bg-foreground text-background'
-                                            : 'border border-border bg-card text-muted-foreground hover:text-foreground'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:bg-surface hover:text-foreground'
                                     }`}
                                 >
                                     {tab.label}
@@ -389,8 +405,8 @@ export default function Events({ events }: Props) {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="grid gap-5 md:grid-cols-2">
-                            {filteredEvents.map((event, idx) => {
+                        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                            {filteredEvents.map((event) => {
                                 const totalQuota = event.divisions.reduce(
                                     (sum, d) => sum + d.quota,
                                     0,
@@ -407,20 +423,35 @@ export default function Events({ events }: Props) {
                                             100,
                                     ),
                                 );
+                                const remainingSpots = Math.max(
+                                    0,
+                                    totalQuota - totalAccepted,
+                                );
+
+                                const myAcceptedCount = event.divisions.filter(
+                                    (d) =>
+                                        d.my_application_status === 'accepted',
+                                ).length;
+                                const myPendingCount = event.divisions.filter(
+                                    (d) =>
+                                        d.my_application_status ===
+                                            'submitted' ||
+                                        d.my_application_status ===
+                                            'under_review',
+                                ).length;
 
                                 return (
                                     <Card
                                         key={event.id}
-                                        className="group flex flex-col justify-between border-border shadow-panel transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
+                                        className="flex flex-col justify-between border-border shadow-panel transition-all duration-200 hover:border-primary/40"
                                     >
                                         <CardHeader className="pb-3">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <span className="font-mono text-xs font-semibold text-primary">
-                                                    --{' '}
-                                                    {String(idx + 1).padStart(
-                                                        2,
-                                                        '0',
-                                                    )}
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <span className="inline-flex max-w-[175px] items-center gap-1 truncate text-xs font-medium text-muted-foreground">
+                                                    <Building2 className="size-3.5 shrink-0 text-primary" />
+                                                    <span className="truncate">
+                                                        {event.organizer_name}
+                                                    </span>
                                                 </span>
                                                 <Badge
                                                     className={
@@ -431,15 +462,15 @@ export default function Events({ events }: Props) {
                                                     }
                                                 >
                                                     {event.status === 'ongoing'
-                                                        ? 'Ongoing Now'
-                                                        : 'Open for Registration'}
+                                                        ? 'Ongoing'
+                                                        : 'Open'}
                                                 </Badge>
                                             </div>
 
-                                            <CardTitle className="mt-2 text-xl font-bold tracking-tight group-hover:text-primary">
+                                            <CardTitle className="mt-2 line-clamp-2 text-lg leading-snug font-bold">
                                                 {event.title}
                                             </CardTitle>
-                                            <CardDescription className="line-clamp-2 text-sm leading-relaxed">
+                                            <CardDescription className="line-clamp-2 text-xs leading-relaxed">
                                                 {event.description}
                                             </CardDescription>
                                         </CardHeader>
@@ -477,37 +508,63 @@ export default function Events({ events }: Props) {
                                                 </p>
                                             </div>
 
-                                            {/* Overall Quota Bar */}
-                                            <div className="rounded-xl border border-border bg-surface p-3">
+                                            {/* Division & Quota Summary */}
+                                            <div className="rounded-lg border border-border bg-surface p-3">
                                                 <div className="mb-1.5 flex items-center justify-between text-xs">
                                                     <span className="flex items-center gap-1.5 font-medium text-foreground">
                                                         <Layers className="size-3.5 text-primary" />
                                                         {event.divisions.length}{' '}
-                                                        Divisions Available
+                                                        {event.divisions
+                                                            .length === 1
+                                                            ? 'Division'
+                                                            : 'Divisions'}
                                                     </span>
-                                                    <span className="font-mono text-muted-foreground">
-                                                        {totalAccepted}/
-                                                        {totalQuota} filled
+                                                    <span className="font-mono text-[11px] text-muted-foreground">
+                                                        {remainingSpots} spots
+                                                        left
                                                     </span>
                                                 </div>
                                                 <Progress value={fillPercent} />
                                             </div>
 
-                                            {/* Action CTA */}
-                                            <button
-                                                type="button"
+                                            {/* My Participation Badge (if already applied/accepted) */}
+                                            {(myAcceptedCount > 0 ||
+                                                myPendingCount > 0) && (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {myAcceptedCount > 0 && (
+                                                        <Badge className="bg-success text-[11px] text-success-foreground">
+                                                            <CheckCircle2 className="mr-1 size-3" />
+                                                            Accepted (
+                                                            {myAcceptedCount})
+                                                        </Badge>
+                                                    )}
+                                                    {myPendingCount > 0 && (
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="text-[11px]"
+                                                        >
+                                                            Applied (
+                                                            {myPendingCount})
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            <Button
+                                                variant={
+                                                    myAcceptedCount > 0
+                                                        ? 'outline'
+                                                        : 'default'
+                                                }
+                                                size="sm"
+                                                className="w-full"
                                                 onClick={() =>
                                                     setActiveEventId(event.id)
                                                 }
-                                                className="inline-flex w-full items-center justify-between rounded-full border border-border bg-white py-1.5 pr-1.5 pl-4 text-xs font-semibold text-foreground transition-colors hover:border-primary/50 hover:bg-surface dark:bg-card"
                                             >
-                                                <span>
-                                                    View Divisions & Details
-                                                </span>
-                                                <span className="flex size-7 items-center justify-center rounded-full bg-gradient-to-tr from-[#008c8d] to-[#2563eb] text-white transition-transform duration-300 group-hover:rotate-45">
-                                                    <ArrowUpRight className="size-3.5" />
-                                                </span>
-                                            </button>
+                                                Inspect Divisions & Apply
+                                                <ArrowRight className="ml-1.5 size-3.5" />
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 );
@@ -590,7 +647,7 @@ export default function Events({ events }: Props) {
                 subtitle={
                     activeEvent
                         ? 'Inspect available divisions and submit your volunteer application.'
-                        : 'Select an event first to inspect its divisions, quotas, and volunteer roles.'
+                        : 'Browse active initiatives first, then open any event card to view divisions and apply.'
                 }
             >
                 <Head title="Explore Events — VolunSync" />

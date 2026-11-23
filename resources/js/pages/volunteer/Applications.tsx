@@ -4,9 +4,10 @@ import {
     CheckCircle2,
     Clock,
     Compass,
+    MessageSquareText,
     XCircle,
 } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +17,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import VolunteerLayout from '@/layouts/VolunteerLayout';
 
 type ApplicationItem = {
@@ -45,37 +45,132 @@ type Props = {
     applications: ApplicationItem[];
 };
 
-const stageMeta: Record<
+const statusBadgeMap: Record<
     ApplicationItem['status'],
-    { progress: number; label: string; badgeClass: string }
+    { label: string; className: string }
 > = {
     submitted: {
-        progress: 33,
         label: 'Submitted',
-        badgeClass: 'bg-secondary text-secondary-foreground',
+        className: 'bg-secondary text-secondary-foreground',
     },
     under_review: {
-        progress: 66,
         label: 'Under Review',
-        badgeClass: 'bg-warning text-warning-foreground',
+        className: 'bg-warning text-warning-foreground',
     },
     accepted: {
-        progress: 100,
         label: 'Accepted',
-        badgeClass: 'bg-success text-success-foreground',
+        className: 'bg-success text-success-foreground',
     },
     rejected: {
-        progress: 100,
         label: 'Not Selected',
-        badgeClass: 'bg-destructive/15 text-destructive',
+        className: 'bg-destructive/15 text-destructive',
     },
 };
 
+function ApplicationStepper({
+    status,
+}: {
+    status: ApplicationItem['status'];
+}) {
+    const stepIndex =
+        status === 'submitted'
+            ? 0
+            : status === 'under_review'
+              ? 1
+              : 2;
+
+    const steps = [
+        { label: 'Submitted', done: true },
+        { label: 'Under Review', done: stepIndex >= 1 },
+        {
+            label: status === 'rejected' ? 'Not Selected' : 'Accepted',
+            done: stepIndex >= 2,
+            rejected: status === 'rejected',
+        },
+    ];
+
+    return (
+        <div className="flex items-center gap-2">
+            {steps.map((step, idx) => (
+                <div key={step.label} className="flex flex-1 items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                        <span
+                            className={`flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                                step.rejected
+                                    ? 'bg-destructive text-white'
+                                    : step.done
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'bg-muted text-muted-foreground'
+                            }`}
+                        >
+                            {step.rejected ? '✕' : step.done ? '✓' : idx + 1}
+                        </span>
+                        <span
+                            className={`text-xs whitespace-nowrap ${
+                                step.done
+                                    ? 'font-semibold text-foreground'
+                                    : 'text-muted-foreground'
+                            }`}
+                        >
+                            {step.label}
+                        </span>
+                    </div>
+                    {idx < steps.length - 1 && (
+                        <div
+                            className={`h-0.5 flex-1 rounded-full ${
+                                stepIndex > idx ? 'bg-primary' : 'bg-border'
+                            }`}
+                        />
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export default function Applications({ applications }: Props) {
+    const [filter, setFilter] = useState<
+        'all' | 'accepted' | 'pending' | 'rejected'
+    >('all');
+
+    const counts = useMemo(
+        () => ({
+            all: applications.length,
+            accepted: applications.filter((a) => a.status === 'accepted')
+                .length,
+            pending: applications.filter(
+                (a) => a.status === 'submitted' || a.status === 'under_review',
+            ).length,
+            rejected: applications.filter((a) => a.status === 'rejected')
+                .length,
+        }),
+        [applications],
+    );
+
+    const filtered = useMemo(() => {
+        return applications.filter((app) => {
+            if (filter === 'accepted') return app.status === 'accepted';
+            if (filter === 'pending')
+                return (
+                    app.status === 'submitted' || app.status === 'under_review'
+                );
+            if (filter === 'rejected') return app.status === 'rejected';
+            return true;
+        });
+    }, [applications, filter]);
+
     return (
         <VolunteerLayout
-            title="My Applications & Live Timeline"
-            subtitle="Track your selection status in real time. Accepted applications automatically unlock your division workspace."
+            title="My Applications & Timeline"
+            subtitle="Track your selection stage across every event. Accepted applications unlock their division workspace automatically."
+            actions={
+                <Button size="sm" variant="outline" asChild>
+                    <Link href="/events">
+                        <Compass className="mr-1.5 size-4" />
+                        Browse More Events
+                    </Link>
+                </Button>
+            }
         >
             <Head title="My Applications — VolunSync" />
 
@@ -99,135 +194,158 @@ export default function Applications({ applications }: Props) {
                 </Card>
             ) : (
                 <div className="space-y-5">
-                    {applications.map((app) => {
-                        const meta = stageMeta[app.status];
-                        const steps = [
-                            { key: 'submitted', label: 'Submitted' },
-                            { key: 'under_review', label: 'Under Review' },
-                            {
-                                key: 'decision',
-                                label:
-                                    app.status === 'rejected'
-                                        ? 'Not Selected'
-                                        : 'Accepted',
-                            },
-                        ];
+                    {/* Filter Pill Bar */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {(
+                            [
+                                { key: 'all', label: `All (${counts.all})` },
+                                {
+                                    key: 'accepted',
+                                    label: `Accepted (${counts.accepted})`,
+                                },
+                                {
+                                    key: 'pending',
+                                    label: `In Progress (${counts.pending})`,
+                                },
+                                {
+                                    key: 'rejected',
+                                    label: `Not Selected (${counts.rejected})`,
+                                },
+                            ] as const
+                        ).map((tab) => (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => setFilter(tab.key)}
+                                className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                                    filter === tab.key
+                                        ? 'bg-primary text-primary-foreground shadow-xs'
+                                        : 'border border-border bg-card text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
 
-                        return (
-                            <Card key={app.id} className="shadow-panel">
-                                <CardHeader className="pb-3">
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                        <div>
-                                            <CardTitle className="text-lg">
-                                                {app.division.name} —{' '}
-                                                {app.event.title}
-                                            </CardTitle>
-                                            <CardDescription className="mt-1">
-                                                {app.event.venue_name} · Applied{' '}
-                                                {new Date(
-                                                    app.created_at,
-                                                ).toLocaleDateString('en-US', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                })}
-                                            </CardDescription>
-                                        </div>
-                                        <Badge className={meta.badgeClass}>
-                                            {app.status === 'accepted' && (
-                                                <CheckCircle2 className="mr-1 size-3.5" />
-                                            )}
-                                            {app.status === 'rejected' && (
-                                                <XCircle className="mr-1 size-3.5" />
-                                            )}
-                                            {(app.status === 'submitted' ||
-                                                app.status ===
-                                                    'under_review') && (
-                                                <Clock className="mr-1 size-3.5" />
-                                            )}
-                                            {meta.label}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
+                    {filtered.length === 0 ? (
+                        <Card>
+                            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                                No applications in this status filter.
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-4">
+                            {filtered.map((app) => {
+                                const badge = statusBadgeMap[app.status];
+                                return (
+                                    <Card key={app.id} className="shadow-panel">
+                                        <CardHeader className="pb-3">
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div>
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <CardTitle className="text-base font-bold">
+                                                            {app.division.name}
+                                                        </CardTitle>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            · {app.event.title}
+                                                        </span>
+                                                    </div>
+                                                    <CardDescription className="mt-1 text-xs">
+                                                        {app.event.venue_name} ·
+                                                        Applied{' '}
+                                                        {new Date(
+                                                            app.created_at,
+                                                        ).toLocaleDateString(
+                                                            'en-US',
+                                                            {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                year: 'numeric',
+                                                            },
+                                                        )}
+                                                    </CardDescription>
+                                                </div>
 
-                                <CardContent className="space-y-4">
-                                    {/* Live Status Timeline */}
-                                    <div className="rounded-xl border border-border bg-surface p-4">
-                                        <div className="mb-2 flex items-center justify-between text-xs font-medium">
-                                            {steps.map((step, idx) => {
-                                                const active =
-                                                    (idx === 0 && true) ||
-                                                    (idx === 1 &&
-                                                        app.status !==
-                                                            'submitted') ||
-                                                    (idx === 2 &&
-                                                        (app.status ===
-                                                            'accepted' ||
-                                                            app.status ===
-                                                                'rejected'));
-                                                return (
-                                                    <span
-                                                        key={step.key}
+                                                <div className="flex items-center gap-2">
+                                                    <Badge
                                                         className={
-                                                            active
-                                                                ? 'font-semibold text-foreground'
-                                                                : 'text-muted-foreground'
+                                                            badge.className
                                                         }
                                                     >
-                                                        {idx + 1}. {step.label}
-                                                    </span>
-                                                );
-                                            })}
-                                        </div>
-                                        <Progress value={meta.progress} />
-                                    </div>
+                                                        {app.status ===
+                                                            'accepted' && (
+                                                            <CheckCircle2 className="mr-1 size-3" />
+                                                        )}
+                                                        {app.status ===
+                                                            'rejected' && (
+                                                            <XCircle className="mr-1 size-3" />
+                                                        )}
+                                                        {(app.status ===
+                                                            'submitted' ||
+                                                            app.status ===
+                                                                'under_review') && (
+                                                            <Clock className="mr-1 size-3" />
+                                                        )}
+                                                        {badge.label}
+                                                    </Badge>
+                                                    {app.status ===
+                                                        'accepted' && (
+                                                        <Button
+                                                            size="sm"
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={`/volunteer/workspace/${app.division.id}`}
+                                                            >
+                                                                Workspace
+                                                                <ArrowRight className="ml-1 size-3.5" />
+                                                            </Link>
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardHeader>
 
-                                    <div className="text-sm">
-                                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                                            Your Motivation
-                                        </p>
-                                        <p className="mt-1 text-muted-foreground">
-                                            {app.motivation}
-                                        </p>
-                                    </div>
+                                        <CardContent className="space-y-3 pt-0">
+                                            {/* Compact 3-Step Visual Stepper */}
+                                            <div className="rounded-lg border border-border bg-surface px-3.5 py-2.5">
+                                                <ApplicationStepper
+                                                    status={app.status}
+                                                />
+                                            </div>
 
-                                    {app.reviewer_notes && (
-                                        <Alert>
-                                            <AlertTitle>
-                                                Coordinator Note
-                                                {app.reviewer_name
-                                                    ? ` (${app.reviewer_name})`
-                                                    : ''}
-                                            </AlertTitle>
-                                            <AlertDescription>
-                                                {app.reviewer_notes}
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
+                                            {/* Compact 2-Column Motivation & Reviewer Feedback */}
+                                            <div className="grid gap-3 md:grid-cols-2">
+                                                <div className="rounded-lg border border-border/70 bg-card p-3">
+                                                    <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                        Your Motivation
+                                                    </p>
+                                                    <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+                                                        {app.motivation}
+                                                    </p>
+                                                </div>
 
-                                    {app.status === 'accepted' && (
-                                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-soft/60 px-4 py-3">
-                                            <p className="text-sm font-medium text-soft-foreground">
-                                                You have been placed in the{' '}
-                                                <strong>
-                                                    {app.division.name}
-                                                </strong>{' '}
-                                                workspace!
-                                            </p>
-                                            <Button size="sm" asChild>
-                                                <Link
-                                                    href={`/volunteer/workspace/${app.division.id}`}
-                                                >
-                                                    Open Division Workspace
-                                                    <ArrowRight className="ml-1.5 size-4" />
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+                                                <div className="rounded-lg border border-border/70 bg-card p-3">
+                                                    <p className="flex items-center gap-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                        <MessageSquareText className="size-3 text-primary" />
+                                                        Coordinator Feedback
+                                                        {app.reviewer_name
+                                                            ? ` (${app.reviewer_name})`
+                                                            : ''}
+                                                    </p>
+                                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                                        {app.reviewer_notes ||
+                                                            'Waiting for coordinator screening notes.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
         </VolunteerLayout>

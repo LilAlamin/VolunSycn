@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Admin\ShiftController as AdminShiftController;
 use App\Http\Controllers\Volunteer\ApplicationController as VolunteerApplicationController;
 use App\Http\Controllers\Volunteer\CheckInController as VolunteerCheckInController;
+use App\Http\Controllers\Volunteer\DashboardController as VolunteerDashboardController;
 use App\Http\Controllers\Volunteer\EventExplorerController;
 use App\Http\Controllers\Volunteer\WorkspaceController;
 use App\Models\AttendanceLog;
@@ -60,11 +61,12 @@ Route::middleware(['auth'])->get('/dashboard', function (Request $request) {
         return redirect()->route('admin.dashboard');
     }
 
-    return redirect()->route('volunteer.applications.index');
+    return redirect()->route('volunteer.dashboard');
 })->name('dashboard');
 
 // Volunteer Routes
 Route::middleware(['auth'])->prefix('volunteer')->name('volunteer.')->group(function () {
+    Route::get('/dashboard', [VolunteerDashboardController::class, 'index'])->name('dashboard');
     Route::get('/applications', [VolunteerApplicationController::class, 'index'])->name('applications.index');
     Route::post('/applications', [VolunteerApplicationController::class, 'store'])->name('applications.store');
 

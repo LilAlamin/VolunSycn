@@ -52,6 +52,12 @@ export default function VolunteerLayout({
 
     const mainNav = [
         {
+            label: 'Dashboard',
+            href: '/volunteer/dashboard',
+            icon: LayoutDashboard,
+            active: currentPath === '/volunteer/dashboard',
+        },
+        {
             label: 'Explore Events',
             href: '/events',
             icon: Compass,
