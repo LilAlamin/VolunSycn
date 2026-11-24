@@ -8,6 +8,7 @@ import {
     FileArchive,
     LayoutDashboard,
     LogOut,
+    Megaphone,
     Menu,
     Moon,
     QrCode,
@@ -79,6 +80,12 @@ export default function AdminLayout({
             href: '/admin/applications',
             icon: ClipboardCheck,
             active: currentPath.startsWith('/admin/applications'),
+        },
+        {
+            label: 'Announcements',
+            href: '/admin/announcements',
+            icon: Megaphone,
+            active: currentPath.startsWith('/admin/announcements'),
         },
         {
             label: 'Shifts & QR Codes',

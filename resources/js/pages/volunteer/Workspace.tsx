@@ -15,6 +15,7 @@ import {
     MapPin,
     Megaphone,
     Phone,
+    Pin,
     QrCode,
     Search,
     Users,
@@ -68,6 +69,16 @@ type DocumentRow = {
     created_at: string | null;
 };
 
+type AnnouncementRow = {
+    id: number;
+    title: string;
+    body: string;
+    is_pinned: boolean;
+    scope: 'event_wide' | 'division_only';
+    author_name: string;
+    created_at: string | null;
+};
+
 type Props = {
     division: {
         id: number;
@@ -95,6 +106,7 @@ type Props = {
             bio: string | null;
         } | null;
     };
+    announcements?: AnnouncementRow[];
     members: {
         id: number;
         name: string;
@@ -118,6 +130,7 @@ const getInitials = (name: string) =>
 
 export default function Workspace({
     division,
+    announcements = [],
     members,
     shifts,
     divisionVerifiedHours,
@@ -416,10 +429,72 @@ export default function Workspace({
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="rounded-xl border border-primary/20 bg-surface p-4 text-sm leading-relaxed">
-                                {division.announcements ||
-                                    'No announcements posted yet. Check back before event day!'}
-                            </div>
+                            {announcements.length > 0 ? (
+                                <div className="space-y-3">
+                                    {announcements.map((ann) => (
+                                        <div
+                                            key={ann.id}
+                                            className={`rounded-xl border p-4 ${
+                                                ann.is_pinned
+                                                    ? 'border-primary/40 bg-primary/5'
+                                                    : 'border-border bg-surface'
+                                            }`}
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    {ann.is_pinned && (
+                                                        <Badge className="bg-primary text-[10px] text-primary-foreground">
+                                                            <Pin className="mr-1 size-2.5" />
+                                                            Pinned
+                                                        </Badge>
+                                                    )}
+                                                    <Badge
+                                                        variant={
+                                                            ann.scope ===
+                                                            'event_wide'
+                                                                ? 'secondary'
+                                                                : 'outline'
+                                                        }
+                                                        className="text-[10px]"
+                                                    >
+                                                        {ann.scope ===
+                                                        'event_wide'
+                                                            ? 'Event-Wide'
+                                                            : division.name}
+                                                    </Badge>
+                                                </div>
+                                                <span className="text-[11px] text-muted-foreground">
+                                                    {ann.author_name}
+                                                    {ann.created_at
+                                                        ? ` · ${new Date(
+                                                              ann.created_at,
+                                                          ).toLocaleDateString(
+                                                              'en-US',
+                                                              {
+                                                                  month: 'short',
+                                                                  day: 'numeric',
+                                                                  hour: '2-digit',
+                                                                  minute: '2-digit',
+                                                              },
+                                                          )}`
+                                                        : ''}
+                                                </span>
+                                            </div>
+                                            <h4 className="mt-2 text-sm font-semibold text-foreground">
+                                                {ann.title}
+                                            </h4>
+                                            <p className="mt-1 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
+                                                {ann.body}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-xl border border-primary/20 bg-surface p-4 text-sm leading-relaxed">
+                                    {division.announcements ||
+                                        'No announcements posted yet. Check back before event day!'}
+                                </div>
+                            )}
                             {division.description && (
                                 <div>
                                     <h4 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">

@@ -83,4 +83,12 @@ class Division extends Model
     {
         return $this->hasMany(Document::class);
     }
+
+    /**
+     * @return HasMany<Announcement, $this>
+     */
+    public function announcementPosts(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
 }

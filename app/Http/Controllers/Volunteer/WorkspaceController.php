@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Volunteer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\Application;
 use App\Models\AttendanceLog;
 use App\Models\Division;
@@ -179,6 +180,28 @@ class WorkspaceController extends Controller
             ->values()
             ->all();
 
+        $announcements = Announcement::query()
+            ->where('event_id', $division->event_id)
+            ->where(function ($q) use ($division): void {
+                $q->whereNull('division_id')
+                    ->orWhere('division_id', $division->id);
+            })
+            ->with('author:id,name')
+            ->orderByDesc('is_pinned')
+            ->latest()
+            ->get()
+            ->map(fn (Announcement $item): array => [
+                'id' => $item->id,
+                'title' => $item->title,
+                'body' => $item->body,
+                'is_pinned' => $item->is_pinned,
+                'scope' => $item->division_id === null ? 'event_wide' : 'division_only',
+                'author_name' => $item->author?->name ?? 'Coordinator',
+                'created_at' => $item->created_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+
         return Inertia::render('volunteer/Workspace', [
             'division' => [
                 'id' => $division->id,
@@ -206,6 +229,7 @@ class WorkspaceController extends Controller
                     'bio' => $division->coordinator->bio,
                 ] : null,
             ],
+            'announcements' => $announcements,
             'members' => $members,
             'shifts' => $shifts,
             'divisionVerifiedHours' => $divisionVerifiedHours,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
 use App\Http\Controllers\Admin\CoordinatorController as AdminCoordinatorController;
@@ -99,6 +100,11 @@ Route::middleware(['auth', 'role:organizer|coordinator'])
         Route::post('/divisions', [AdminDivisionController::class, 'store'])->name('divisions.store');
         Route::put('/divisions/{division}', [AdminDivisionController::class, 'update'])->name('divisions.update');
         Route::delete('/divisions/{division}', [AdminDivisionController::class, 'destroy'])->name('divisions.destroy');
+
+        Route::get('/announcements', [AdminAnnouncementController::class, 'index'])->name('announcements.index');
+        Route::post('/announcements', [AdminAnnouncementController::class, 'store'])->name('announcements.store');
+        Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('/announcements/{announcement}', [AdminAnnouncementController::class, 'destroy'])->name('announcements.destroy');
 
         Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
         Route::patch('/applications/{application}/review', [AdminApplicationController::class, 'review'])->name('applications.review');
