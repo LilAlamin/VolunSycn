@@ -99,7 +99,7 @@ class WorkspaceController extends Controller
                 'id' => $app->user->id,
                 'name' => $app->user->name,
                 'email' => $app->user->email,
-                'phone' => $app->user->phone,
+                'phone' => $app->phone ?: $app->user->phone,
                 'bio' => $app->user->bio,
                 'is_me' => $app->user->id === $user->id,
             ])

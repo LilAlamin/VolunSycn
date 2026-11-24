@@ -506,14 +506,33 @@ export default function Workspace({
                                                 </Badge>
                                             )}
                                         </div>
-                                        <p className="truncate text-xs text-muted-foreground">
-                                            {member.email}
-                                        </p>
-                                        {member.phone && (
-                                            <p className="mt-1 font-mono text-xs text-muted-foreground">
-                                                {member.phone}
-                                            </p>
-                                        )}
+                                        <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                                            <a
+                                                href={`mailto:${member.email}`}
+                                                className="flex items-center gap-1.5 hover:text-primary hover:underline"
+                                            >
+                                                <Mail className="size-3.5 shrink-0 text-primary" />
+                                                <span className="truncate">
+                                                    {member.email}
+                                                </span>
+                                            </a>
+                                            {member.phone ? (
+                                                <a
+                                                    href={`tel:${member.phone}`}
+                                                    className="flex items-center gap-1.5 font-mono hover:text-primary hover:underline"
+                                                >
+                                                    <Phone className="size-3.5 shrink-0 text-primary" />
+                                                    <span className="truncate">
+                                                        {member.phone}
+                                                    </span>
+                                                </a>
+                                            ) : (
+                                                <p className="flex items-center gap-1.5 text-muted-foreground/70">
+                                                    <Phone className="size-3.5 shrink-0" />
+                                                    <span>No phone number</span>
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>

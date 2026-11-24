@@ -292,4 +292,34 @@ class ApplicationCvAndContactTest extends TestCase
                 ->where('applications.0.cv_url', $expectedCvUrl)
             );
     }
+
+    public function test_peer_directory_displays_member_email_and_application_phone(): void
+    {
+        ['event' => $event, 'division' => $division] = $this->createOpenEventAndDivision();
+
+        $volunteer = User::factory()->create([
+            'email' => 'peer@volunsync.test',
+            'phone' => '081100000000',
+        ]);
+        $volunteer->assignRole('volunteer');
+
+        Application::create([
+            'user_id' => $volunteer->id,
+            'event_id' => $event->id,
+            'division_id' => $division->id,
+            'motivation' => 'Accepted division member for peer directory verification.',
+            'phone' => '081299998888',
+            'status' => Application::STATUS_ACCEPTED,
+        ]);
+
+        $this->actingAs($volunteer)
+            ->get("/volunteer/workspace/{$division->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('volunteer/Workspace')
+                ->has('members', 1)
+                ->where('members.0.email', 'peer@volunsync.test')
+                ->where('members.0.phone', '081299998888')
+            );
+    }
 }
