@@ -415,7 +415,7 @@ export default function Workspace({
                 {/* TAB 1: Overview & Coordinator Contact */}
                 <TabsContent
                     value="overview"
-                    className="grid gap-5 lg:grid-cols-3"
+                    className="grid items-start gap-5 lg:grid-cols-3"
                 >
                     <Card className="shadow-panel lg:col-span-2">
                         <CardHeader>
@@ -508,7 +508,7 @@ export default function Workspace({
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-panel">
+                    <Card className="h-fit shadow-panel">
                         <CardHeader>
                             <CardTitle className="text-lg">
                                 Division Coordinator
