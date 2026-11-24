@@ -5,10 +5,13 @@ import {
     Building2,
     CalendarDays,
     CheckCircle2,
+    FileText,
     Layers,
     MapPin,
+    Phone,
     Search,
     Send,
+    Upload,
     Users,
 } from 'lucide-react';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
@@ -100,9 +103,20 @@ export default function Events({ events }: Props) {
         division: DivisionItem;
     } | null>(null);
 
-    const form = useForm({
+    const form = useForm<{
+        division_id: number;
+        motivation: string;
+        phone: string;
+        instagram: string;
+        linkedin: string;
+        cv: File | null;
+    }>({
         division_id: 0,
         motivation: '',
+        phone: '',
+        instagram: '',
+        linkedin: '',
+        cv: null,
     });
 
     const activeEvent = useMemo(
@@ -134,6 +148,11 @@ export default function Events({ events }: Props) {
         form.setData({
             division_id: division.id,
             motivation: '',
+            phone:
+                typeof auth?.user?.phone === 'string' ? auth.user.phone : '',
+            instagram: '',
+            linkedin: '',
+            cv: null,
         });
         form.clearErrors();
     };
@@ -141,6 +160,7 @@ export default function Events({ events }: Props) {
     const submitApplication = (e: FormEvent) => {
         e.preventDefault();
         form.post('/volunteer/applications', {
+            forceFormData: true,
             onSuccess: () => {
                 setSelectedDivision(null);
                 form.reset();
@@ -579,21 +599,163 @@ export default function Events({ events }: Props) {
                 open={selectedDivision !== null}
                 onOpenChange={(open) => !open && setSelectedDivision(null)}
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>
                             Apply to {selectedDivision?.division.name}
                         </DialogTitle>
                         <DialogDescription>
-                            {selectedDivision?.eventTitle} — Share your
-                            motivation and relevant experience for the division
+                            {selectedDivision?.eventTitle} — Share your contact
+                            details, CV, and motivation for the division
                             coordinator.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={submitApplication} className="space-y-4">
                         <div className="space-y-2">
+                            <Label htmlFor="apply-phone">
+                                Phone Number{' '}
+                                <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="relative">
+                                <Phone className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
+                                <Input
+                                    id="apply-phone"
+                                    type="tel"
+                                    required
+                                    className="pl-9"
+                                    placeholder="+62 812-3456-7890"
+                                    value={form.data.phone}
+                                    onChange={(e) =>
+                                        form.setData('phone', e.target.value)
+                                    }
+                                />
+                            </div>
+                            {form.errors.phone && (
+                                <p className="text-xs text-destructive">
+                                    {form.errors.phone}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="apply-instagram">
+                                    Instagram{' '}
+                                    <span className="text-xs font-normal text-muted-foreground">
+                                        (Optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="apply-instagram"
+                                    placeholder="@username"
+                                    value={form.data.instagram}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'instagram',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                                {form.errors.instagram && (
+                                    <p className="text-xs text-destructive">
+                                        {form.errors.instagram}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="apply-linkedin">
+                                    LinkedIn{' '}
+                                    <span className="text-xs font-normal text-muted-foreground">
+                                        (Optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="apply-linkedin"
+                                    placeholder="linkedin.com/in/username"
+                                    value={form.data.linkedin}
+                                    onChange={(e) =>
+                                        form.setData('linkedin', e.target.value)
+                                    }
+                                />
+                                {form.errors.linkedin && (
+                                    <p className="text-xs text-destructive">
+                                        {form.errors.linkedin}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="apply-cv">
+                                Upload CV{' '}
+                                <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="rounded-lg border border-dashed border-border bg-surface/60 p-3">
+                                <label
+                                    htmlFor="apply-cv"
+                                    className="flex cursor-pointer items-center gap-3 text-xs"
+                                >
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                        {form.data.cv ? (
+                                            <FileText className="size-4" />
+                                        ) : (
+                                            <Upload className="size-4" />
+                                        )}
+                                    </span>
+                                    <span className="min-w-0 flex-1">
+                                        {form.data.cv ? (
+                                            <>
+                                                <span className="block truncate font-medium text-foreground">
+                                                    {form.data.cv.name}
+                                                </span>
+                                                <span className="text-[11px] text-muted-foreground">
+                                                    {(
+                                                        form.data.cv.size / 1024
+                                                    ).toFixed(0)}{' '}
+                                                    KB · Click to replace
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="block font-medium text-foreground">
+                                                    Choose CV file (PDF, DOC,
+                                                    DOCX)
+                                                </span>
+                                                <span className="text-[11px] text-muted-foreground">
+                                                    Max 5 MB · Private — only
+                                                    visible to you & event
+                                                    reviewers
+                                                </span>
+                                            </>
+                                        )}
+                                    </span>
+                                </label>
+                                <input
+                                    id="apply-cv"
+                                    type="file"
+                                    required
+                                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                    className="sr-only"
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'cv',
+                                            e.target.files?.[0] ?? null,
+                                        )
+                                    }
+                                />
+                            </div>
+                            {form.errors.cv && (
+                                <p className="text-xs text-destructive">
+                                    {form.errors.cv}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
                             <Label htmlFor="motivation">
-                                Why do you want to join this division?
+                                Why do you want to join this division?{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Textarea
                                 id="motivation"

@@ -8,7 +8,16 @@ import {
     type ColumnDef,
     type SortingState,
 } from '@tanstack/react-table';
-import { ArrowUpDown, Eye, Search } from 'lucide-react';
+import {
+    ArrowUpDown,
+    Download,
+    ExternalLink,
+    Eye,
+    FileText,
+    Globe,
+    Phone,
+    Search,
+} from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,6 +54,11 @@ type ApplicationRow = {
     id: number;
     status: 'submitted' | 'under_review' | 'accepted' | 'rejected';
     motivation: string;
+    phone: string | null;
+    instagram: string | null;
+    linkedin: string | null;
+    cv_original_name: string | null;
+    cv_url: string | null;
     reviewer_notes: string | null;
     reviewer_name: string | null;
     reviewed_at: string | null;
@@ -78,6 +92,21 @@ const statusBadge: Record<string, string> = {
     under_review: 'bg-warning text-warning-foreground',
     accepted: 'bg-success text-success-foreground',
     rejected: 'bg-destructive/15 text-destructive',
+};
+
+const normalizeSocialUrl = (
+    value: string,
+    platform: 'instagram' | 'linkedin',
+): string => {
+    const trimmed = value.trim();
+    if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+    }
+    if (platform === 'instagram') {
+        const handle = trimmed.replace(/^@/, '');
+        return `https://instagram.com/${handle}`;
+    }
+    return `https://${trimmed}`;
 };
 
 export default function ApplicationsIndex({
@@ -163,14 +192,31 @@ export default function ApplicationsIndex({
                         <ArrowUpDown className="ml-1.5 size-3.5" />
                     </Button>
                 ),
-                cell: ({ row }) => (
-                    <div>
-                        <p className="font-medium">{row.original.user.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                            {row.original.user.email}
-                        </p>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const phone = row.original.phone || row.original.user.phone;
+                    return (
+                        <div>
+                            <div className="flex items-center gap-1.5">
+                                <p className="font-medium">
+                                    {row.original.user.name}
+                                </p>
+                                {row.original.cv_url && (
+                                    <Badge
+                                        variant="outline"
+                                        className="px-1.5 py-0 text-[10px]"
+                                    >
+                                        <FileText className="mr-0.5 size-2.5" />
+                                        CV
+                                    </Badge>
+                                )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {row.original.user.email}
+                                {phone ? ` · ${phone}` : ''}
+                            </p>
+                        </div>
+                    );
+                },
             },
             {
                 id: 'event',
@@ -435,19 +481,93 @@ export default function ApplicationsIndex({
 
                     {reviewTarget && (
                         <form onSubmit={submitReview} className="space-y-4">
-                            <div className="rounded-lg border border-border bg-surface p-3 text-sm">
+                            <div className="space-y-2.5 rounded-lg border border-border bg-surface p-3 text-sm">
                                 <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                     Applicant Profile & Motivation
                                 </p>
-                                <p className="mt-1.5 text-foreground">
+                                <p className="text-foreground">
                                     {reviewTarget.motivation}
                                 </p>
-                                <p className="mt-2 font-mono text-xs text-muted-foreground">
-                                    {reviewTarget.user.email}
-                                    {reviewTarget.user.phone
-                                        ? ` · ${reviewTarget.user.phone}`
-                                        : ''}
-                                </p>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/70 pt-2 text-xs text-muted-foreground">
+                                    <span className="font-mono">
+                                        {reviewTarget.user.email}
+                                    </span>
+                                    {(reviewTarget.phone ||
+                                        reviewTarget.user.phone) && (
+                                        <span className="inline-flex items-center gap-1 font-mono">
+                                            <Phone className="size-3 text-primary" />
+                                            {reviewTarget.phone ||
+                                                reviewTarget.user.phone}
+                                        </span>
+                                    )}
+                                    {reviewTarget.instagram && (
+                                        <a
+                                            href={normalizeSocialUrl(
+                                                reviewTarget.instagram,
+                                                'instagram',
+                                            )}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                                        >
+                                            <Globe className="size-3" />
+                                            Instagram ({reviewTarget.instagram})
+                                        </a>
+                                    )}
+                                    {reviewTarget.linkedin && (
+                                        <a
+                                            href={normalizeSocialUrl(
+                                                reviewTarget.linkedin,
+                                                'linkedin',
+                                            )}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                                        >
+                                            <ExternalLink className="size-3" />
+                                            LinkedIn
+                                        </a>
+                                    )}
+                                </div>
+
+                                {reviewTarget.cv_url && (
+                                    <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2">
+                                        <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-foreground">
+                                            <FileText className="size-4 shrink-0 text-primary" />
+                                            <span className="truncate">
+                                                {reviewTarget.cv_original_name ||
+                                                    'Applicant CV'}
+                                            </span>
+                                        </span>
+                                        <div className="flex shrink-0 items-center gap-1.5">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                asChild
+                                            >
+                                                <a
+                                                    href={reviewTarget.cv_url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                >
+                                                    View CV
+                                                </a>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                asChild
+                                            >
+                                                <a
+                                                    href={`${reviewTarget.cv_url}?download=1`}
+                                                    title="Download CV"
+                                                >
+                                                    <Download className="size-3.5" />
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-1.5">

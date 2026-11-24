@@ -4,7 +4,12 @@ import {
     CheckCircle2,
     Clock,
     Compass,
+    Download,
+    ExternalLink,
+    FileText,
+    Globe,
     MessageSquareText,
+    Phone,
     XCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -23,6 +28,11 @@ type ApplicationItem = {
     id: number;
     status: 'submitted' | 'under_review' | 'accepted' | 'rejected';
     motivation: string;
+    phone: string | null;
+    instagram: string | null;
+    linkedin: string | null;
+    cv_original_name: string | null;
+    cv_url: string | null;
     reviewer_notes: string | null;
     reviewer_name: string | null;
     reviewed_at: string | null;
@@ -340,6 +350,60 @@ export default function Applications({ applications }: Props) {
                                                     </p>
                                                 </div>
                                             </div>
+
+                                            {(app.phone ||
+                                                app.instagram ||
+                                                app.linkedin ||
+                                                app.cv_url) && (
+                                                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-surface/60 px-3 py-2 text-xs">
+                                                    <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+                                                        {app.phone && (
+                                                            <span className="inline-flex items-center gap-1 font-mono">
+                                                                <Phone className="size-3 text-primary" />
+                                                                {app.phone}
+                                                            </span>
+                                                        )}
+                                                        {app.instagram && (
+                                                            <span className="inline-flex items-center gap-1">
+                                                                <Globe className="size-3 text-primary" />
+                                                                IG:{' '}
+                                                                {app.instagram}
+                                                            </span>
+                                                        )}
+                                                        {app.linkedin && (
+                                                            <span className="inline-flex items-center gap-1">
+                                                                <ExternalLink className="size-3 text-primary" />
+                                                                LinkedIn:{' '}
+                                                                {app.linkedin}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {app.cv_url && (
+                                                        <div className="flex items-center gap-2">
+                                                            <a
+                                                                href={
+                                                                    app.cv_url
+                                                                }
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                                                            >
+                                                                <FileText className="size-3.5" />
+                                                                {app.cv_original_name ||
+                                                                    'View CV'}
+                                                            </a>
+                                                            <a
+                                                                href={`${app.cv_url}?download=1`}
+                                                                className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                                                                title="Download CV"
+                                                            >
+                                                                <Download className="size-3.5" />
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 );
