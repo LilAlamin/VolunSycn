@@ -70,14 +70,22 @@ class ApplicationController extends Controller
         $events = Event::query()
             ->when($isOrganizer, fn ($q) => $q->where('organizer_id', $user->id))
             ->when(! $isOrganizer, fn ($q) => $q->whereHas('divisions', fn ($d) => $d->where('coordinator_id', $user->id)))
-            ->select('id', 'title')
-            ->orderBy('title')
+            ->select('id', 'title', 'status', 'venue_name', 'start_date', 'end_date')
+            ->orderByDesc('start_date')
             ->get()
+            ->map(fn (Event $ev): array => [
+                'id' => $ev->id,
+                'title' => $ev->title,
+                'status' => $ev->status,
+                'venue_name' => $ev->venue_name,
+                'start_date' => $ev->start_date?->toIso8601String(),
+                'end_date' => $ev->end_date?->toIso8601String(),
+            ])
             ->all();
 
         $divisions = Division::query()
             ->whereIn('id', $scopedDivisionIds)
-            ->select('id', 'event_id', 'name')
+            ->select('id', 'event_id', 'name', 'quota')
             ->orderBy('name')
             ->get()
             ->all();

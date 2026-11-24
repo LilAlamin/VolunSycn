@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/Inertia.js-v3-9553E9?style=flat-square" alt="Inertia v3" />
   <img src="https://img.shields.io/badge/Dens--UI-v0.2.0-008C8D?style=flat-square" alt="Dens-UI" />
-  <img src="https://img.shields.io/badge/Tests-47%20Passed-16A34A?style=flat-square" alt="Tests Passing" />
+  <img src="https://img.shields.io/badge/Tests-55%20Passed-16A34A?style=flat-square" alt="Tests Passing" />
 </p>
 
 ---
@@ -57,7 +57,7 @@ Seluruh fitur inti **Priority 1 (MVP)** beserta penyempurnaan UX multi-organisas
 ### 4. Organizer & Coordinator Admin Console (`/admin/*`)
 - **Dashboard (`/admin/dashboard`):** Ringkasan KPI scoped per Organizer atau per Coordinator + slot placeholder Priority 2.
 - **Events & Divisions (`/admin/events`):** CRUD Event (dengan koordinat GPS venue & radius check-in geofence) serta CRUD Divisi, kuota, penugasan Coordinator, dan pengumuman workspace.
-- **Screening Portal (`/admin/applications`):** Powered by **TanStack Table v8** dengan pencarian, filter Event/Divisi/Status, sorting, pagination, dan dialog review (termasuk validasi kuota divisi).
+- **Screening Portal (`/admin/applications`):** Alur **2-level Event-First** (Event Overview Grid dengan progres kuota & badge pending → Focused Event Screening Queue dengan Division Quick-Filter Pills, Status Filter Tabs, **TanStack Table v8**, serta modal review dengan CV privat, kontak pelamar, dan validasi kuota divisi).
 - **Shifts & QR Codes (`/admin/shifts`):** Pembuatan shift dengan `qr_token` unik, tampilan modal SVG QR code (`bacon/bacon-qr-code`), dan penugasan relawan yang dijaga oleh **`ShiftConflictService`** (**0% double-booking** lintas divisi maupun lintas event).
 - **Attendance Logs (`/admin/attendance`):** Validasi radius GPS server-side menggunakan rumus **Haversine** (`AttendanceVerificationService`), penghitungan otomatis `verified_hours` saat check-out, dan tombol force check-out admin.
 

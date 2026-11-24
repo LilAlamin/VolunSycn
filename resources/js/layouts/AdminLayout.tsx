@@ -5,7 +5,6 @@ import {
     ChevronRight,
     ClipboardCheck,
     Clock,
-    Compass,
     FileArchive,
     LayoutDashboard,
     LogOut,
@@ -150,19 +149,6 @@ export default function AdminLayout({
                                 P2
                             </Badge>
                         </div>
-                    </div>
-
-                    <div className="pt-4">
-                        <p className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                            Switch View
-                        </p>
-                        <Link
-                            href="/events"
-                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-                        >
-                            <Compass className="size-4" />
-                            <span>Public Event Explorer</span>
-                        </Link>
                     </div>
                 </nav>
 

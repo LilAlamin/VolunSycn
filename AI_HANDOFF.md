@@ -1,7 +1,7 @@
 # VolunSync — AI Agent Handoff & Context Guide
 
 > **Read this file FIRST before scanning the repository.**
-> It summarizes the exact implementation state as of commit `f20ee4a` (2026-11-24), architectural choices, file map, gotchas, and remaining Priority 2 / optional tasks so you do not need to re-read the entire codebase.
+> It summarizes the exact implementation state as of **2026-11-24** (including CV/contact application workflow, clickable peer directory, clean Organizer sidebar, and Event-First Screening Portal), architectural choices, file map, gotchas, and remaining Priority 2 / optional tasks so you do not need to re-read the entire codebase.
 
 ---
 
@@ -35,7 +35,7 @@
   - Public registration as `coordinator` is strictly rejected (`Rule::in(['volunteer', 'organizer'])`).
 - **Event Explorer (`/events` — `EventExplorerController.php`, `pages/volunteer/Events.tsx`):**
   - Shows `PublicNavbar` when logged out and `VolunteerLayout` when logged in.
-  - Per-event catalog cards (search, status filter, organization name, overall quota bar, participation badge) -> click **"Inspect Divisions & Apply"** to view all divisions & apply via modal. Supports `?event=<id>` deep-linking.
+  - Per-event catalog cards (search, status filter, organization name, overall quota bar, participation badge) -> click **"Inspect Divisions & Apply"** to view all divisions & apply via modal (supports motivation, contact phone, Instagram, LinkedIn, and private PDF/DOCX CV upload). Supports `?event=<id>` deep-linking.
 
 ### B. Volunteer Console (`VolunteerLayout.tsx` — Sticky `h-screen` Sidebar)
 - **Volunteer Dashboard (`/volunteer/dashboard` — `Volunteer\DashboardController.php`, `pages/volunteer/Dashboard.tsx`):**
@@ -46,7 +46,7 @@
 - **Multi-Event Workspaces (`/volunteer/workspaces` — `WorkspaceController@index`, `pages/volunteer/Workspaces.tsx`):**
   - Lists every accepted division across multiple events and flags overlapping event dates while assuring shift-level protection.
 - **Per-Division Workspace (`/volunteer/workspace/{division}` — `WorkspaceController@show`, `pages/volunteer/Workspace.tsx`):**
-  - Tabs: **Overview & Briefings**, **Peer Directory**, **Shifts & QR Check-In** (scoped `html5-qrcode` camera scanner + auto GPS + OpenStreetMap geofence map + Check-Out), and **Documents (`P2`)** (scoped `Event-Wide` vs `Division-Only` preview).
+  - Tabs: **Overview & Briefings**, **Peer Directory** (with clickable `mailto:` email and `tel:` phone links), **Shifts & QR Check-In** (scoped `html5-qrcode` camera scanner + auto GPS + OpenStreetMap geofence map + Check-Out), and **Documents (`P2`)** (scoped `Event-Wide` vs `Division-Only` preview).
   - Global `QR Check-In` link was intentionally removed from the Volunteer sidebar so volunteers never confuse which event/division they are checking into (`/volunteer/check-in` still works as a fallback route).
 - **Profile & Identity Verification (`/settings/profile` — `ProfileController.php`, `pages/settings/profile.tsx`):**
   - Clickable profile card at the bottom of both Volunteer & Admin sidebars (`resources/js/layouts/console-layout.tsx`).
@@ -61,11 +61,13 @@
 - **Server-Side Verification:** `App\Services\AttendanceVerificationService` enforces Haversine radius validation and computes `verified_hours` on check-out.
 
 ### D. Organizer & Coordinator Admin Console (`AdminLayout.tsx` — Multi-Org & Division Scoped)
-- **Strict Scoping:** Organizers only see/manage their own events (`events.organizer_id = auth()->id()`). Coordinators only see/manage their assigned divisions (`divisions.coordinator_id = auth()->id()`). Enforced in `EventPolicy`, `DivisionPolicy`, `ApplicationPolicy`, `ShiftPolicy`, and FormRequests.
+- **Strict Scoping & Clean Sidebar (`AdminLayout.tsx`):** Organizers only see/manage their own events (`events.organizer_id = auth()->id()`). Coordinators only see/manage their assigned divisions (`divisions.coordinator_id = auth()->id()`). Enforced in `EventPolicy`, `DivisionPolicy`, `ApplicationPolicy`, `ShiftPolicy`, and FormRequests. `Public Event Explorer` switch-view link was intentionally removed from the Admin sidebar to avoid role confusion.
 - **Admin Dashboard (`/admin/dashboard`):** Scoped KPIs + recent applications + Priority 2 analytics placeholder card.
 - **Events & Divisions (`/admin/events`):** Event CRUD (with OpenStreetMap picker) & Division CRUD.
 - **Coordinators (`/admin/coordinators` — Organizer only):** Full CRUD (`CoordinatorController.php`, `pages/admin/coordinators/Index.tsx`) to provision new Coordinator accounts (`created_by_organizer_id`), edit/reset password, multi-select assigned divisions, assign existing users, or delete/unassign.
-- **Screening Portal (`/admin/applications`):** TanStack Table v8 with search, event/division/status filters, sorting, pagination, and review dialog enforcing division quota.
+- **Screening Portal (`/admin/applications` — `Admin\ApplicationController.php`, `pages/admin/applications/Index.tsx`):**
+  - **2-Level Event-First UX:** Starts with an Event Overview Grid (KPI summary strip + per-event cards showing pending screening count, division quota progress bar, and division chips) + optional `All Applicants` cross-event toggle.
+  - Clicking an event opens its **Focused Screening Queue** with breadcrumb, quick Event Switcher dropdown, interactive **Division Quick-Filter Pills** (showing `filled/quota` and pending badges), **Status Filter Tabs** (`All`, `Needs Screening`, `Submitted`, `Under Review`, `Accepted`, `Rejected`), TanStack Table v8, and Review Modal (motivation, phone, Instagram/LinkedIn, private CV view/download via `ApplicationCvController`, and division quota enforcement).
 - **Shifts & QR Codes (`/admin/shifts`):** Create shifts (auto-generates unique `qr_token`), display SVG QR modal, assign/unassign volunteers guarded by `App\Services\ShiftConflictService` (0% double-booking across all events/divisions).
 - **Attendance Logs (`/admin/attendance`):** TanStack Table of QR/GPS check-ins, coordinates, verified hours, and admin force check-out.
 
@@ -84,6 +86,7 @@ Migrations (all run cleanly via `php artisan migrate:fresh --seed`):
 - `2026_11_23_150006_create_documents_table.php`
 - `2026_11_24_000001_add_organization_fields_to_users_table.php` (`organization_name`, `organization_description`, `created_by_organizer_id`)
 - `2026_11_24_000002_add_verification_profile_fields_to_users_table.php` (`city`, `address`, `date_of_birth`, `emergency_contact_name`, `emergency_contact_phone`, `skills`, `profile_verified_at`)
+- `2026_11_24_000003_add_cv_and_contact_fields_to_applications_table.php` (`phone`, `instagram`, `linkedin`, `cv_path`, `cv_original_name`)
 
 Seeded Accounts (`DatabaseSeeder.php` — password for all: `password`):
 - **Organizer 1:** `organizer@volunsync.test` (SIPA Cultural & Civic Collective)
@@ -98,7 +101,7 @@ Seeded Accounts (`DatabaseSeeder.php` — password for all: `password`):
 
 Run these after making any changes:
 ```bash
-php artisan test          # Currently: 48 passed (187 assertions)
+php artisan test          # Currently: 55 passed (281 assertions)
 npm run types:check       # tsc --noEmit (0 errors)
 npm run build             # Vite production build
 ```
@@ -108,6 +111,7 @@ Test suites added for VolunSync (`tests/Feature/VolunSync/`):
 - `AttendanceVerificationTest.php`
 - `RoleAccessAndWorkflowTest.php`
 - `RegistrationAndMultiOrgTest.php`
+- `ApplicationCvAndContactTest.php`
 - Plus `tests/Feature/Settings/ProfileUpdateTest.php` (includes avatar + verification details test).
 
 ---
