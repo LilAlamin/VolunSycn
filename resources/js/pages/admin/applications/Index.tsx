@@ -15,13 +15,13 @@ import {
     CalendarDays,
     CheckCircle2,
     Clock,
-    Download,
     ExternalLink,
     Eye,
     FileText,
     Globe,
     Inbox,
     Layers,
+    Mail,
     MapPin,
     Phone,
     Search,
@@ -29,6 +29,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
+import { CvPreview } from '@/components/cv-preview';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -1263,169 +1264,211 @@ export default function ApplicationsIndex({
                 open={reviewTarget !== null}
                 onOpenChange={(open) => !open && setReviewTarget(null)}
             >
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>
-                            Screen Applicant: {reviewTarget?.user.name}
-                        </DialogTitle>
-                        <DialogDescription>
+                <DialogContent
+                    className={cn(
+                        'flex max-h-[90vh] w-[95vw] flex-col gap-0 overflow-hidden p-0',
+                        reviewTarget?.cv_url
+                            ? 'sm:max-w-5xl'
+                            : 'sm:max-w-xl',
+                    )}
+                >
+                    <DialogHeader className="shrink-0 border-b border-border px-6 py-4 pr-12">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <DialogTitle className="text-base">
+                                Screen Applicant: {reviewTarget?.user.name}
+                            </DialogTitle>
+                            {reviewTarget && (
+                                <Badge
+                                    className={
+                                        statusBadge[reviewTarget.status] ?? ''
+                                    }
+                                >
+                                    {reviewTarget.status.replace('_', ' ')}
+                                </Badge>
+                            )}
+                        </div>
+                        <DialogDescription className="truncate">
                             {reviewTarget?.division.name} ·{' '}
                             {reviewTarget?.event.title}
                         </DialogDescription>
                     </DialogHeader>
 
                     {reviewTarget && (
-                        <form onSubmit={submitReview} className="space-y-4">
-                            <div className="space-y-2.5 rounded-lg border border-border bg-surface p-3 text-sm">
-                                <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                                    Applicant Profile & Motivation
-                                </p>
-                                <p className="text-foreground">
-                                    {reviewTarget.motivation}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/70 pt-2 text-xs text-muted-foreground">
-                                    <span className="font-mono">
-                                        {reviewTarget.user.email}
-                                    </span>
-                                    {(reviewTarget.phone ||
-                                        reviewTarget.user.phone) && (
-                                        <span className="inline-flex items-center gap-1 font-mono">
-                                            <Phone className="size-3 text-primary" />
-                                            {reviewTarget.phone ||
-                                                reviewTarget.user.phone}
-                                        </span>
-                                    )}
-                                    {reviewTarget.instagram && (
-                                        <a
-                                            href={normalizeSocialUrl(
-                                                reviewTarget.instagram,
-                                                'instagram',
-                                            )}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                                        >
-                                            <Globe className="size-3" />
-                                            Instagram ({reviewTarget.instagram})
-                                        </a>
-                                    )}
-                                    {reviewTarget.linkedin && (
-                                        <a
-                                            href={normalizeSocialUrl(
-                                                reviewTarget.linkedin,
-                                                'linkedin',
-                                            )}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                                        >
-                                            <ExternalLink className="size-3" />
-                                            LinkedIn
-                                        </a>
-                                    )}
-                                </div>
+                        <div
+                            className={cn(
+                                'grid min-h-0 flex-1 grid-cols-1 overflow-y-auto',
+                                reviewTarget.cv_url &&
+                                    'lg:grid-cols-12 lg:overflow-hidden',
+                            )}
+                        >
+                            {/* Left Column: Applicant Profile, Motivation & Decision Form */}
+                            <form
+                                onSubmit={submitReview}
+                                className={cn(
+                                    'flex min-w-0 flex-col justify-between gap-5 p-6',
+                                    reviewTarget.cv_url
+                                        ? 'border-b border-border lg:col-span-5 lg:overflow-y-auto lg:border-r lg:border-b-0'
+                                        : 'w-full',
+                                )}
+                            >
+                                <div className="min-w-0 space-y-4">
+                                    {/* Applicant Profile & Contacts */}
+                                    <div className="min-w-0 space-y-3 rounded-lg border border-border bg-surface p-3.5 text-sm">
+                                        <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                            Applicant Profile & Motivation
+                                        </p>
 
-                                {reviewTarget.cv_url && (
-                                    <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2">
-                                        <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-foreground">
-                                            <FileText className="size-4 shrink-0 text-primary" />
-                                            <span className="truncate">
-                                                {reviewTarget.cv_original_name ||
-                                                    'Applicant CV'}
-                                            </span>
-                                        </span>
-                                        <div className="flex shrink-0 items-center gap-1.5">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                asChild
+                                        <p className="max-h-40 overflow-y-auto text-sm leading-relaxed break-words whitespace-pre-wrap text-foreground">
+                                            {reviewTarget.motivation}
+                                        </p>
+
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-xs text-muted-foreground">
+                                            <a
+                                                href={`mailto:${reviewTarget.user.email}`}
+                                                className="inline-flex min-w-0 items-center gap-1 font-mono hover:text-primary hover:underline"
                                             >
+                                                <Mail className="size-3 shrink-0 text-primary" />
+                                                <span className="truncate">
+                                                    {reviewTarget.user.email}
+                                                </span>
+                                            </a>
+                                            {(reviewTarget.phone ||
+                                                reviewTarget.user.phone) && (
                                                 <a
-                                                    href={reviewTarget.cv_url}
+                                                    href={`tel:${reviewTarget.phone || reviewTarget.user.phone}`}
+                                                    className="inline-flex items-center gap-1 font-mono hover:text-primary hover:underline"
+                                                >
+                                                    <Phone className="size-3 shrink-0 text-primary" />
+                                                    <span>
+                                                        {reviewTarget.phone ||
+                                                            reviewTarget.user
+                                                                .phone}
+                                                    </span>
+                                                </a>
+                                            )}
+                                            {reviewTarget.instagram && (
+                                                <a
+                                                    href={normalizeSocialUrl(
+                                                        reviewTarget.instagram,
+                                                        'instagram',
+                                                    )}
                                                     target="_blank"
                                                     rel="noreferrer"
+                                                    className="inline-flex items-center gap-1 text-primary hover:underline"
                                                 >
-                                                    View CV
+                                                    <Globe className="size-3 shrink-0" />
+                                                    <span>
+                                                        {reviewTarget.instagram}
+                                                    </span>
                                                 </a>
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                asChild
-                                            >
+                                            )}
+                                            {reviewTarget.linkedin && (
                                                 <a
-                                                    href={`${reviewTarget.cv_url}?download=1`}
-                                                    title="Download CV"
+                                                    href={normalizeSocialUrl(
+                                                        reviewTarget.linkedin,
+                                                        'linkedin',
+                                                    )}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex items-center gap-1 text-primary hover:underline"
                                                 >
-                                                    <Download className="size-3.5" />
+                                                    <ExternalLink className="size-3 shrink-0" />
+                                                    <span>LinkedIn</span>
                                                 </a>
-                                            </Button>
+                                            )}
                                         </div>
+
+                                        {!reviewTarget.cv_url && (
+                                            <p className="border-t border-border/70 pt-2 text-xs text-muted-foreground">
+                                                No CV file attached to this
+                                                application.
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                            </div>
 
-                            <div className="space-y-1.5">
-                                <Label>Decision Status</Label>
-                                <Select
-                                    value={reviewForm.data.status}
-                                    onValueChange={(val) =>
-                                        reviewForm.setData('status', val)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="under_review">
-                                            Mark Under Review
-                                        </SelectItem>
-                                        <SelectItem value="accepted">
-                                            Accept (Unlock Workspace)
-                                        </SelectItem>
-                                        <SelectItem value="rejected">
-                                            Reject
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {reviewForm.errors.status && (
-                                    <p className="text-xs text-destructive">
-                                        {reviewForm.errors.status}
-                                    </p>
-                                )}
-                            </div>
+                                    {/* Decision Status */}
+                                    <div className="space-y-1.5">
+                                        <Label>Decision Status</Label>
+                                        <Select
+                                            value={reviewForm.data.status}
+                                            onValueChange={(val) =>
+                                                reviewForm.setData(
+                                                    'status',
+                                                    val,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="under_review">
+                                                    Mark Under Review
+                                                </SelectItem>
+                                                <SelectItem value="accepted">
+                                                    Accept (Unlock Workspace)
+                                                </SelectItem>
+                                                <SelectItem value="rejected">
+                                                    Reject
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {reviewForm.errors.status && (
+                                            <p className="text-xs text-destructive">
+                                                {reviewForm.errors.status}
+                                            </p>
+                                        )}
+                                    </div>
 
-                            <div className="space-y-1.5">
-                                <Label>Reviewer Notes (shown to volunteer)</Label>
-                                <Textarea
-                                    rows={3}
-                                    placeholder="Optional feedback or next steps..."
-                                    value={reviewForm.data.reviewer_notes}
-                                    onChange={(e) =>
-                                        reviewForm.setData(
-                                            'reviewer_notes',
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                            </div>
+                                    {/* Reviewer Notes */}
+                                    <div className="space-y-1.5">
+                                        <Label>
+                                            Reviewer Notes (shown to volunteer)
+                                        </Label>
+                                        <Textarea
+                                            rows={3}
+                                            className="w-full resize-y"
+                                            placeholder="Optional feedback or next steps..."
+                                            value={
+                                                reviewForm.data.reviewer_notes
+                                            }
+                                            onChange={(e) =>
+                                                reviewForm.setData(
+                                                    'reviewer_notes',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                </div>
 
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setReviewTarget(null)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={reviewForm.processing}
-                                >
-                                    Save Decision
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                                <DialogFooter className="border-t border-border/70 pt-4">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setReviewTarget(null)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={reviewForm.processing}
+                                    >
+                                        Save Decision
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+
+                            {/* Right Column: Live CV Document Preview */}
+                            {reviewTarget.cv_url && (
+                                <div className="flex min-h-[420px] min-w-0 flex-col bg-muted/20 p-4 lg:col-span-7 lg:h-full lg:overflow-hidden">
+                                    <CvPreview
+                                        url={reviewTarget.cv_url}
+                                        filename={reviewTarget.cv_original_name}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     )}
                 </DialogContent>
             </Dialog>
