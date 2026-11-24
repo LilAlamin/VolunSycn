@@ -16,4 +16,13 @@ class ApplicationPolicy
         return $user->hasRole('coordinator')
             && $application->division?->coordinator_id === $user->id;
     }
+
+    public function viewCv(User $user, Application $application): bool
+    {
+        if ($application->user_id === $user->id) {
+            return true;
+        }
+
+        return $this->review($user, $application);
+    }
 }

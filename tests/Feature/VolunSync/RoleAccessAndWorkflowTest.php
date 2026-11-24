@@ -7,6 +7,8 @@ use App\Models\Division;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -63,11 +65,15 @@ class RoleAccessAndWorkflowTest extends TestCase
             ->get("/volunteer/workspace/{$divisionA->id}")
             ->assertForbidden();
 
+        Storage::fake('local');
+
         // Volunteer applies to division A
         $this->actingAs($volunteer)
             ->post('/volunteer/applications', [
                 'division_id' => $divisionA->id,
                 'motivation' => 'I want to help coordinate logistics and equipment for Bandung Civic Day.',
+                'phone' => '081234567890',
+                'cv' => UploadedFile::fake()->create('volunteer-cv.pdf', 120, 'application/pdf'),
             ])
             ->assertRedirect('/volunteer/applications');
 

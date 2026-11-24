@@ -33,6 +33,11 @@ class ApplicationController extends Controller
                 'id' => $app->id,
                 'status' => $app->status,
                 'motivation' => $app->motivation,
+                'phone' => $app->phone,
+                'instagram' => $app->instagram,
+                'linkedin' => $app->linkedin,
+                'cv_original_name' => $app->cv_original_name,
+                'cv_url' => $app->cv_path ? route('applications.cv', $app) : null,
                 'reviewer_notes' => $app->reviewer_notes,
                 'reviewer_name' => $app->reviewer?->name,
                 'reviewed_at' => $app->reviewed_at?->toIso8601String(),
@@ -88,13 +93,28 @@ class ApplicationController extends Controller
             ]);
         }
 
+        $cvFile = $request->file('cv');
+        $cvPath = $cvFile->store("cvs/{$user->id}", 'local');
+        $phone = trim($request->string('phone')->toString());
+        $instagram = $request->filled('instagram') ? trim($request->string('instagram')->toString()) : null;
+        $linkedin = $request->filled('linkedin') ? trim($request->string('linkedin')->toString()) : null;
+
         Application::create([
             'user_id' => $user->id,
             'event_id' => $division->event_id,
             'division_id' => $division->id,
             'motivation' => $request->string('motivation')->toString(),
+            'cv_path' => $cvPath,
+            'cv_original_name' => $cvFile->getClientOriginalName(),
+            'phone' => $phone,
+            'instagram' => $instagram,
+            'linkedin' => $linkedin,
             'status' => Application::STATUS_SUBMITTED,
         ]);
+
+        if (blank($user->phone)) {
+            $user->forceFill(['phone' => $phone])->save();
+        }
 
         return redirect()
             ->route('volunteer.applications.index')

@@ -13,6 +13,11 @@ use Illuminate\Support\Carbon;
  * @property int $event_id
  * @property int $division_id
  * @property string $motivation
+ * @property string|null $cv_path
+ * @property string|null $cv_original_name
+ * @property string|null $phone
+ * @property string|null $instagram
+ * @property string|null $linkedin
  * @property string $status
  * @property int|null $reviewed_by
  * @property Carbon|null $reviewed_at
@@ -40,6 +45,11 @@ class Application extends Model
         'event_id',
         'division_id',
         'motivation',
+        'cv_path',
+        'cv_original_name',
+        'phone',
+        'instagram',
+        'linkedin',
         'status',
         'reviewed_by',
         'reviewed_at',

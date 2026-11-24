@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DivisionController as AdminDivisionController;
 use App\Http\Controllers\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Admin\ShiftController as AdminShiftController;
+use App\Http\Controllers\ApplicationCvController;
 use App\Http\Controllers\Volunteer\ApplicationController as VolunteerApplicationController;
 use App\Http\Controllers\Volunteer\CheckInController as VolunteerCheckInController;
 use App\Http\Controllers\Volunteer\DashboardController as VolunteerDashboardController;
@@ -63,6 +64,11 @@ Route::middleware(['auth'])->get('/dashboard', function (Request $request) {
 
     return redirect()->route('volunteer.dashboard');
 })->name('dashboard');
+
+// Private Application CV Access (authorized via ApplicationPolicy::viewCv)
+Route::middleware(['auth'])
+    ->get('/applications/{application}/cv', ApplicationCvController::class)
+    ->name('applications.cv');
 
 // Volunteer Routes
 Route::middleware(['auth'])->prefix('volunteer')->name('volunteer.')->group(function () {
