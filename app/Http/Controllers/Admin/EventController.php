@@ -11,6 +11,7 @@ use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -102,6 +103,51 @@ class EventController extends Controller
         $event->update($request->validated());
 
         return back()->with('success', 'Event "'.$event->title.'" updated.');
+    }
+
+    public function duplicate(Event $event): RedirectResponse
+    {
+        Gate::authorize('update', $event);
+
+        $event->load('divisions');
+
+        $copy = DB::transaction(function () use ($event): Event {
+            $newTitle = Str::limit($event->title, 240, '').' (Copy)';
+            $newSlug = Str::slug($event->title.' copy').'-'.Str::lower(Str::random(5));
+
+            $duplicatedEvent = Event::create([
+                'organizer_id' => $event->organizer_id,
+                'title' => $newTitle,
+                'slug' => $newSlug,
+                'description' => $event->description,
+                'venue_name' => $event->venue_name,
+                'venue_lat' => $event->venue_lat,
+                'venue_lng' => $event->venue_lng,
+                'checkin_radius_meters' => $event->checkin_radius_meters,
+                'start_date' => $event->start_date,
+                'end_date' => $event->end_date,
+                'status' => Event::STATUS_DRAFT,
+            ]);
+
+            foreach ($event->divisions as $division) {
+                $duplicatedEvent->divisions()->create([
+                    'coordinator_id' => $division->coordinator_id,
+                    'name' => $division->name,
+                    'description' => $division->description,
+                    'announcements' => $division->announcements,
+                    'quota' => $division->quota,
+                ]);
+            }
+
+            return $duplicatedEvent;
+        });
+
+        $divCount = $event->divisions->count();
+
+        return back()->with(
+            'success',
+            'Event "'.$copy->title.'" duplicated with '.$divCount.' '.Str::plural('division', $divCount).' as draft.'
+        );
     }
 
     public function destroy(Event $event): RedirectResponse

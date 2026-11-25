@@ -9,9 +9,9 @@ import {
     LocateFixed,
     MapPin,
     QrCode,
-    WifiOff,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { OfflineCheckInBanner } from '@/components/offline-checkin-banner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { VenueMap } from '@/components/venue-map';
+import { useOfflineCheckInQueue } from '@/hooks/use-offline-checkin-queue';
 import VolunteerLayout from '@/layouts/VolunteerLayout';
 import { detectUserCoordinates } from '@/lib/geolocation';
 
@@ -68,9 +69,15 @@ export default function CheckIn({ assignedShifts, totalVerifiedHours }: Props) {
     const [gpsMessage, setGpsMessage] = useState<string>(
         'Tap "Capture GPS" to verify proximity to the venue.',
     );
-    const [isOffline, setIsOffline] = useState(
-        typeof navigator !== 'undefined' ? !navigator.onLine : false,
-    );
+    const {
+        isOffline,
+        pendingCheckIn,
+        syncing,
+        syncFeedback,
+        queueCheckIn,
+        syncPendingCheckIn,
+        discardPendingCheckIn,
+    } = useOfflineCheckInQueue('volunsync_pending_checkin');
 
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
@@ -85,14 +92,7 @@ export default function CheckIn({ assignedShifts, totalVerifiedHours }: Props) {
     });
 
     useEffect(() => {
-        const handleOnline = () => setIsOffline(false);
-        const handleOffline = () => setIsOffline(true);
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
         return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
             if (scannerRef.current?.isScanning) {
                 scannerRef.current.stop().catch(() => undefined);
             }
@@ -163,13 +163,7 @@ export default function CheckIn({ assignedShifts, totalVerifiedHours }: Props) {
     const handleCheckIn = (e: FormEvent) => {
         e.preventDefault();
         if (isOffline) {
-            localStorage.setItem(
-                'volunsync_pending_checkin',
-                JSON.stringify({
-                    ...form.data,
-                    savedAt: new Date().toISOString(),
-                }),
-            );
+            queueCheckIn(form.data);
             return;
         }
         form.post('/volunteer/check-in', {
@@ -204,16 +198,15 @@ export default function CheckIn({ assignedShifts, totalVerifiedHours }: Props) {
         >
             <Head title="QR Check-In — VolunSync" />
 
-            {isOffline && (
-                <Alert variant="destructive" className="mb-5">
-                    <WifiOff className="size-4" />
-                    <AlertTitle>Low / Offline Venue Connectivity</AlertTitle>
-                    <AlertDescription>
-                        Your check-in payload will be cached locally on this
-                        device and can be retried as soon as signal returns.
-                    </AlertDescription>
-                </Alert>
-            )}
+            <OfflineCheckInBanner
+                className="mb-5"
+                isOffline={isOffline}
+                pendingCheckIn={pendingCheckIn}
+                syncing={syncing}
+                syncFeedback={syncFeedback}
+                onSyncNow={syncPendingCheckIn}
+                onDiscard={discardPendingCheckIn}
+            />
 
             <div className="grid gap-6 lg:grid-cols-12">
                 {/* Left: Scanner + GPS Form */}

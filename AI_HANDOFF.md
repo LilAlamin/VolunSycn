@@ -46,7 +46,7 @@
 - **Multi-Event Workspaces (`/volunteer/workspaces` — `WorkspaceController@index`, `pages/volunteer/Workspaces.tsx`):**
   - Lists every accepted division across multiple events and flags overlapping event dates while assuring shift-level protection.
 - **Per-Division Workspace (`/volunteer/workspace/{division}` — `WorkspaceController@show`, `pages/volunteer/Workspace.tsx`):**
-  - Tabs: **Overview & Briefings**, **Peer Directory** (with clickable `mailto:` email and `tel:` phone links), **Shifts & QR Check-In** (scoped `html5-qrcode` camera scanner + auto GPS + OpenStreetMap geofence map + Check-Out), and **Documents (`P2`)** (scoped `Event-Wide` vs `Division-Only` preview).
+  - Tabs: **Overview & Briefings**, **Peer Directory** (with clickable `mailto:` email and `tel:` phone links), **Shifts & QR Check-In** (scoped `html5-qrcode` camera scanner + auto GPS + OpenStreetMap geofence map + **Offline Check-In Auto-Sync** via `useOfflineCheckInQueue` + Check-Out), and **Documents (`P2`)** (scoped `Event-Wide` vs `Division-Only` preview).
   - Global `QR Check-In` link was intentionally removed from the Volunteer sidebar so volunteers never confuse which event/division they are checking into (`/volunteer/check-in` still works as a fallback route).
 - **Profile & Identity Verification (`/settings/profile` — `ProfileController.php`, `pages/settings/profile.tsx`):**
   - Clickable profile card at the bottom of both Volunteer & Admin sidebars (`resources/js/layouts/console-layout.tsx`).
@@ -63,7 +63,7 @@
 ### D. Organizer & Coordinator Admin Console (`AdminLayout.tsx` — Multi-Org & Division Scoped)
 - **Strict Scoping & Clean Sidebar (`AdminLayout.tsx`):** Organizers only see/manage their own events (`events.organizer_id = auth()->id()`). Coordinators only see/manage their assigned divisions (`divisions.coordinator_id = auth()->id()`). Enforced in `EventPolicy`, `DivisionPolicy`, `ApplicationPolicy`, `ShiftPolicy`, and FormRequests. `Public Event Explorer` switch-view link was intentionally removed from the Admin sidebar to avoid role confusion.
 - **Admin Dashboard (`/admin/dashboard`):** Scoped KPIs + recent applications + Priority 2 analytics placeholder card.
-- **Events & Divisions (`/admin/events`):** Event CRUD (with OpenStreetMap picker) & Division CRUD.
+- **Events & Divisions (`/admin/events`):** Event CRUD (with OpenStreetMap picker), **1-click Duplicate Event + Divisions** (`POST /admin/events/{event}/duplicate`, clones event as `draft` + all divisions), & Division CRUD.
 - **Coordinators (`/admin/coordinators` — Organizer only):** Full CRUD (`CoordinatorController.php`, `pages/admin/coordinators/Index.tsx`) to provision new Coordinator accounts (`created_by_organizer_id`), edit/reset password, multi-select assigned divisions, assign existing users, or delete/unassign.
 - **Screening Portal (`/admin/applications` — `Admin\ApplicationController.php`, `pages/admin/applications/Index.tsx`):**
   - **2-Level Event-First UX:** Starts with an Event Overview Grid (KPI summary strip + per-event cards showing pending screening count, division quota progress bar, and division chips) + optional `All Applicants` cross-event toggle.
@@ -101,7 +101,7 @@ Seeded Accounts (`DatabaseSeeder.php` — password for all: `password`):
 
 Run these after making any changes:
 ```bash
-php artisan test          # Currently: 55 passed (281 assertions)
+php artisan test          # Currently: 56 passed (292 assertions)
 npm run types:check       # tsc --noEmit (0 errors)
 npm run build             # Vite production build
 ```
@@ -125,7 +125,5 @@ Test suites added for VolunSync (`tests/Feature/VolunSync/`):
 3. **Organizer Analytics Dashboard:** Replace the Priority 2 placeholder card in `pages/admin/Dashboard.tsx` with charts for division quota fulfillment, turnout rates, and total verified hours.
 
 ### Optional Pre-Demo Polish (If Requested)
-- **Offline Check-In Auto-Sync:** `Workspace.tsx` & `CheckIn.tsx` save offline payloads to `localStorage`; you can add an automatic `online` listener / "Sync Pending Check-In" button to flush queued check-ins when connectivity returns.
-- **Duplicate Event Structure Button:** Add a 1-click "Duplicate Event + Divisions" action in `Admin\EventController` & `admin/events/Index.tsx` to match proposal Sec 6.3.3.
 - **Production DBMS Switch:** Update `.env` from `sqlite` to `mysql` or `pgsql` if deploying to production.
 

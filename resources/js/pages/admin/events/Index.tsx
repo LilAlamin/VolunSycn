@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import {
     CalendarDays,
+    Copy,
     MapPin,
     Pencil,
     Plus,
@@ -277,8 +278,24 @@ export default function EventsIndex({
                                             Add Division
                                         </Button>
                                         <Button
+                                            size="sm"
+                                            variant="outline"
+                                            title="Duplicate event & division structure as draft"
+                                            onClick={() =>
+                                                router.post(
+                                                    `/admin/events/${ev.id}/duplicate`,
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                        >
+                                            <Copy className="mr-1 size-3.5" />
+                                            Duplicate
+                                        </Button>
+                                        <Button
                                             size="icon"
                                             variant="ghost"
+                                            title="Edit event"
                                             onClick={() => openEditEvent(ev)}
                                         >
                                             <Pencil className="size-4" />

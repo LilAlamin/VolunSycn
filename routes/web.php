@@ -94,6 +94,7 @@ Route::middleware(['auth', 'role:organizer|coordinator'])
 
         Route::get('/events', [AdminEventController::class, 'index'])->name('events.index');
         Route::post('/events', [AdminEventController::class, 'store'])->name('events.store');
+        Route::post('/events/{event}/duplicate', [AdminEventController::class, 'duplicate'])->name('events.duplicate');
         Route::put('/events/{event}', [AdminEventController::class, 'update'])->name('events.update');
         Route::delete('/events/{event}', [AdminEventController::class, 'destroy'])->name('events.destroy');
 

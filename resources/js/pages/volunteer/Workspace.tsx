@@ -19,9 +19,9 @@ import {
     QrCode,
     Search,
     Users,
-    WifiOff,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { OfflineCheckInBanner } from '@/components/offline-checkin-banner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VenueMap } from '@/components/venue-map';
+import { useOfflineCheckInQueue } from '@/hooks/use-offline-checkin-queue';
 import VolunteerLayout from '@/layouts/VolunteerLayout';
 import { detectUserCoordinates } from '@/lib/geolocation';
 
@@ -147,9 +148,15 @@ export default function Workspace({
     const [gpsMessage, setGpsMessage] = useState<string>(
         `Verify proximity within ${division.event.checkin_radius_meters}m of ${division.event.venue_name}.`,
     );
-    const [isOffline, setIsOffline] = useState(
-        typeof navigator !== 'undefined' ? !navigator.onLine : false,
-    );
+    const {
+        isOffline,
+        pendingCheckIn,
+        syncing,
+        syncFeedback,
+        queueCheckIn,
+        syncPendingCheckIn,
+        discardPendingCheckIn,
+    } = useOfflineCheckInQueue(`volunsync_pending_checkin_${division.id}`);
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
     // Document Archive filter state (scoped per Event vs per Division)
@@ -165,14 +172,7 @@ export default function Workspace({
     });
 
     useEffect(() => {
-        const handleOnline = () => setIsOffline(false);
-        const handleOffline = () => setIsOffline(true);
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
         return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
             if (scannerRef.current?.isScanning) {
                 scannerRef.current.stop().catch(() => undefined);
             }
@@ -277,13 +277,7 @@ export default function Workspace({
     const handleCheckIn = (e: FormEvent) => {
         e.preventDefault();
         if (isOffline) {
-            localStorage.setItem(
-                `volunsync_pending_checkin_${division.id}`,
-                JSON.stringify({
-                    ...checkInForm.data,
-                    savedAt: new Date().toISOString(),
-                }),
-            );
+            queueCheckIn(checkInForm.data);
             return;
         }
         checkInForm.post('/volunteer/check-in', {
@@ -617,16 +611,14 @@ export default function Workspace({
 
                 {/* TAB 3: Scoped Shifts & On-Site QR + GPS Check-In */}
                 <TabsContent value="shifts" className="space-y-5">
-                    {isOffline && (
-                        <Alert variant="destructive">
-                            <WifiOff className="size-4" />
-                            <AlertTitle>Low / Offline Connectivity</AlertTitle>
-                            <AlertDescription>
-                                Check-in payload will be cached locally on your
-                                device until signal returns.
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                    <OfflineCheckInBanner
+                        isOffline={isOffline}
+                        pendingCheckIn={pendingCheckIn}
+                        syncing={syncing}
+                        syncFeedback={syncFeedback}
+                        onSyncNow={syncPendingCheckIn}
+                        onDiscard={discardPendingCheckIn}
+                    />
 
                     <div className="grid gap-6 lg:grid-cols-12">
                         {/* Left: Division Shift Roster */}

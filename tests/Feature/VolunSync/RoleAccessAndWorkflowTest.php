@@ -99,5 +99,85 @@ class RoleAccessAndWorkflowTest extends TestCase
             ->get("/volunteer/workspace/{$divisionA->id}")
             ->assertOk();
     }
+
+    public function test_organizer_can_duplicate_event_with_divisions_and_others_are_forbidden(): void
+    {
+        Role::firstOrCreate(['name' => 'organizer']);
+        Role::firstOrCreate(['name' => 'coordinator']);
+
+        $organizer = User::factory()->create();
+        $organizer->assignRole('organizer');
+
+        $otherOrganizer = User::factory()->create();
+        $otherOrganizer->assignRole('organizer');
+
+        $coordinator = User::factory()->create();
+        $coordinator->assignRole('coordinator');
+
+        $event = Event::create([
+            'organizer_id' => $organizer->id,
+            'title' => 'Bandung Heritage Festival',
+            'slug' => 'bandung-heritage-festival',
+            'description' => 'Annual community festival.',
+            'venue_name' => 'Sabuga ITB',
+            'venue_lat' => -6.8868,
+            'venue_lng' => 107.6085,
+            'checkin_radius_meters' => 300,
+            'start_date' => now()->addDays(5),
+            'end_date' => now()->addDays(6),
+            'status' => Event::STATUS_OPEN,
+        ]);
+
+        Division::create([
+            'event_id' => $event->id,
+            'coordinator_id' => $coordinator->id,
+            'name' => 'Stage Operations',
+            'description' => 'Manage stage transitions.',
+            'announcements' => 'Bring walkie-talkies.',
+            'quota' => 20,
+        ]);
+
+        Division::create([
+            'event_id' => $event->id,
+            'coordinator_id' => null,
+            'name' => 'Guest Hospitality',
+            'description' => 'Welcome attendees.',
+            'announcements' => null,
+            'quota' => 15,
+        ]);
+
+        // Coordinator and another Organizer cannot duplicate this event
+        $this->actingAs($coordinator)
+            ->post("/admin/events/{$event->id}/duplicate")
+            ->assertForbidden();
+
+        $this->actingAs($otherOrganizer)
+            ->post("/admin/events/{$event->id}/duplicate")
+            ->assertForbidden();
+
+        // Owning Organizer duplicates event + all divisions as draft
+        $this->actingAs($organizer)
+            ->post("/admin/events/{$event->id}/duplicate")
+            ->assertRedirect();
+
+        $duplicated = Event::query()
+            ->where('id', '!=', $event->id)
+            ->where('organizer_id', $organizer->id)
+            ->with('divisions')
+            ->firstOrFail();
+
+        $this->assertSame('Bandung Heritage Festival (Copy)', $duplicated->title);
+        $this->assertSame(Event::STATUS_DRAFT, $duplicated->status);
+        $this->assertNotSame($event->slug, $duplicated->slug);
+        $this->assertCount(2, $duplicated->divisions);
+        $this->assertSame(
+            ['Guest Hospitality', 'Stage Operations'],
+            $duplicated->divisions->pluck('name')->sort()->values()->all(),
+        );
+        $stageCopy = $duplicated->divisions->firstWhere('name', 'Stage Operations');
+        $this->assertSame(20, $stageCopy->quota);
+        $this->assertSame($coordinator->id, $stageCopy->coordinator_id);
+        $this->assertSame('Bring walkie-talkies.', $stageCopy->announcements);
+    }
 }
 
