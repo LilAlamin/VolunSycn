@@ -30,11 +30,11 @@ export function VolunSyncLogo({
 
     return (
         <div className={cn('flex items-center gap-2.5', className)}>
-            <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 ring-1 ring-border/60 dark:ring-0">
+            <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/80 p-1 ring-1 ring-border/60 dark:bg-white/10 dark:ring-white/10">
                 <img
-                    src="/images/volunsync-mark.jpg"
+                    src="/images/volunsync-mark.png"
                     alt="VolunSync Logo"
-                    className="h-full w-full object-contain mix-blend-multiply"
+                    className="h-full w-full object-contain"
                 />
             </div>
             <div className="flex flex-col leading-tight">
