@@ -152,6 +152,7 @@
 }
 
 @theme inline {
+  --font-display: "Anton", "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 
@@ -299,6 +300,12 @@
   html {
     color-scheme: light;
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   html.dark {
     color-scheme: dark;

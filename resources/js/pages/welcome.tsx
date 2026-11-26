@@ -3,24 +3,22 @@ import {
     ArrowUpRight,
     CalendarDays,
     Check,
-    CheckCircle2,
     Copy,
     MapPin,
-    Plus,
-    QrCode,
-    ShieldCheck,
+    Sparkles,
 } from 'lucide-react';
 import {
-    AnimatePresence,
     MotionConfig,
     motion,
+    useAnimationFrame,
+    useInView,
     useScroll,
     useSpring,
     useTransform,
+    useVelocity,
+    type MotionValue,
 } from 'motion/react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { PublicNavbar } from '@/components/public-navbar';
-import { VolunSyncLogo } from '@/components/volunsync-logo';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Auth } from '@/types';
 
 type FeaturedEvent = {
@@ -44,271 +42,155 @@ type WelcomeProps = {
     featuredEvents?: FeaturedEvent[];
 };
 
-const tickerItems = [
-    'Community Events',
-    'Division Screening',
-    'Automated Workspaces',
-    'Zero-Overlap Shifts',
-    'QR + GPS Check-In',
-    'Verified Service Hours',
-];
+const manifestoText =
+    "We believe great events need focus, not chaos. That's why VolunSync puts recruitment, divisions, shifts, documents and check-ins in one calm dashboard — so organizers can stop chasing and start running.";
 
-const avatarStack = [
-    { initials: 'NK', bg: 'bg-[#008c8d] text-white' },
-    { initials: 'RR', bg: 'bg-[#0284c7] text-white' },
-    { initials: 'AK', bg: 'bg-[#2563eb] text-white' },
-    { initials: 'AR', bg: 'bg-[#0f172a] text-white' },
-];
-
-const whyItems = [
+const manifestoPills = [
     {
-        num: '-- 01',
-        title: 'End spreadsheet chaos',
-        description:
-            'Replace scattered chat threads and manual forms with one structured system built for real community teams.',
+        label: 'Conflict-free shifts',
+        bg: 'bg-[#0D1219] text-white',
+        rotate: -4.5,
+        position: 'top-[13%] right-[4%] sm:top-[14%] sm:right-[11%]',
+        appearAt: 0.2,
     },
     {
-        num: '-- 02',
-        title: 'Instant division onboarding',
-        description:
-            'Approving an applicant immediately unlocks their division workspace, coordinator contact, and peer directory.',
+        label: 'QR + GPS check-in',
+        bg: 'bg-[#2F5CE6] text-white',
+        rotate: 4,
+        position: 'top-[46%] left-[2%] sm:top-[45%] sm:left-[4%]',
+        appearAt: 0.44,
     },
     {
-        num: '-- 03',
-        title: 'Zero double-booking',
-        description:
-            'Server-side overlap guards automatically reject conflicting shift assignments across divisions and events.',
+        label: 'Role-based access',
+        bg: 'bg-[#0E838F] text-white',
+        rotate: -3.5,
+        position: 'top-[62%] right-[2%] sm:top-[58%] sm:right-[6%]',
+        appearAt: 0.66,
     },
     {
-        num: '-- 04',
-        title: 'Trustworthy service hours',
-        description:
-            'Dynamic shift QR codes paired with Haversine GPS geofencing verify attendance and log hours automatically.',
+        label: 'Live notifications',
+        bg: 'bg-gradient-to-r from-[#0E838F] to-[#2F5CE6] text-white',
+        rotate: 3.2,
+        position: 'bottom-[4%] left-[10%] sm:bottom-[6%] sm:left-[18%]',
+        appearAt: 0.82,
     },
 ];
 
-const focusAreas = [
+const ribbonItems = [
+    'NO SPREADSHEETS',
+    'ZERO DOUBLE-BOOKING',
+    'QR + GPS CHECK-IN',
+    'DIVISION WORKSPACES',
+    'VERIFIED SERVICE HOURS',
+    'ROLE-BASED ACCESS',
+];
+
+const pillars = [
     {
-        num: '-- 01',
-        category: '[ Focus area ]',
+        num: '01',
         title: 'Recruitment & Screening',
         description:
-            'Quota-aware division applications paired with a fast TanStack Table screening portal and live status timelines for every applicant.',
-        tags: ['# Quota Tracking', '# TanStack Table', '# Live Timeline'],
+            'Quota-aware applications with a fast screening table, CV preview, and live status timelines for every applicant.',
+        tags: ['Quota tracking', 'Screening table', 'Live timelines'],
+        image: '/images/pillar-recruitment-3d.jpg',
         href: '/events',
-        cta: 'Browse events',
     },
     {
-        num: '-- 02',
-        category: '[ Focus area ]',
+        num: '02',
         title: 'Division Workspaces',
         description:
-            'Dedicated team hubs that unlock automatically on acceptance — complete with announcements, coordinator info, and peer directory.',
-        tags: ['# Auto Access', '# Peer Directory', '# Briefings'],
+            'Dedicated team hubs that unlock automatically on acceptance — announcements, coordinator info, and peer briefings.',
+        tags: ['Auto access', 'Team briefings', 'Peer roster'],
+        image: '/images/pillar-workspaces-3d.jpg',
         href: '/login',
-        cta: 'Open workspace',
     },
     {
-        num: '-- 03',
-        category: '[ Focus area ]',
+        num: '03',
         title: 'Zero-Overlap Scheduling',
         description:
-            'Coordinate multi-division shift rosters with strict interval conflict validation so volunteers are never double-booked.',
-        tags: ['# 0% Double-Booking', '# Multi-Division', '# Shift Roster'],
+            'Multi-division shift rosters with server-side conflict checks, so no volunteer is ever double-booked.',
+        tags: ['0% double-booking', 'Multi-division', 'Shift roster'],
+        image: '/images/pillar-scheduling-3d.jpg',
         href: '/login',
-        cta: 'View schedule',
     },
     {
-        num: '-- 04',
-        category: '[ Focus area ]',
+        num: '04',
         title: 'QR + GPS Attendance',
         description:
-            'Mobile-first camera QR scanning with server-side Haversine proximity validation and automated service-hour calculation.',
-        tags: ['# Dynamic QR', '# Haversine GPS', '# Verified Hours'],
+            'Mobile camera QR scanning with Haversine venue proximity checks and automatic service-hour logs.',
+        tags: ['Dynamic QR', 'Geofence', 'Verified hours'],
+        image: '/images/pillar-attendance-3d.jpg',
         href: '/login',
-        cta: 'Try check-in',
     },
 ];
 
-const workflowStages = [
+const journeyStages = [
     {
-        step: 'Step 01',
-        phase: 'Discovery',
-        items: [
-            {
-                title: 'Browse open community events & division quotas',
-                meta: 'Public Explorer',
-            },
-            {
-                title: 'Submit division motivation & availability',
-                meta: '1-Minute Form',
-            },
-            {
-                title: 'Receive instant live timeline tracking',
-                meta: 'Submitted',
-            },
-        ],
+        num: '01',
+        title: 'Discover',
+        description:
+            'Browse open community events and division quotas, then apply in a minute.',
     },
     {
-        step: 'Step 02',
-        phase: 'Screening',
-        items: [
-            {
-                title: 'Coordinators filter applicants by division & status',
-                meta: 'TanStack Table',
-            },
-            {
-                title: 'Inspect motivation & post reviewer feedback',
-                meta: 'Under Review',
-            },
-            {
-                title: 'Approve within quota to trigger onboarding',
-                meta: 'Accepted ✓',
-            },
-        ],
+        num: '02',
+        title: 'Screening',
+        description:
+            'Coordinators filter applicants by division and status, then accept with one click.',
     },
     {
-        step: 'Step 03',
-        phase: 'Coordination',
-        items: [
-            {
-                title: 'Division workspace unlocks automatically',
-                meta: 'RBAC Scoped',
-            },
-            {
-                title: 'Read briefings & connect with peers',
-                meta: 'Directory',
-            },
-            {
-                title: 'Get assigned shifts with 0% overlap guard',
-                meta: 'Conflict-Free',
-            },
-        ],
+        num: '03',
+        title: 'Coordinate',
+        description:
+            'Division workspaces unlock automatically with briefings and conflict-free shifts.',
     },
     {
-        step: 'Step 04',
-        phase: 'On-Site Ops',
-        items: [
-            {
-                title: 'Scan coordinator shift QR code on arrival',
-                meta: 'html5-qrcode',
-            },
-            {
-                title: 'Server validates GPS within venue radius',
-                meta: 'Haversine',
-            },
-            {
-                title: 'Check out to certify verified service hours',
-                meta: 'Auto Logged',
-            },
-        ],
+        num: '04',
+        title: 'On-site ops',
+        description:
+            'Volunteers scan in with QR + venue GPS and earn verified service hours.',
     },
 ];
 
-const rolePasses = [
+const demoRoles = [
     {
-        code: 'PASS 01',
         role: 'Event Organizer',
-        tagline: 'Full platform orchestration across all events & divisions.',
+        badge: 'Full Scope',
         email: 'organizer@volunsync.test',
-        perks: [
-            'Create & manage events + GPS geofences',
-            'Assign Division Coordinators & quotas',
-            'Screen all applicants & inspect attendance logs',
-        ],
     },
     {
-        code: 'PASS 02',
         role: 'Division Coordinator',
-        tagline: 'Scoped control for your assigned operational division.',
+        badge: 'Division Scope',
         email: 'coordinator@volunsync.test',
-        perks: [
-            'Screen division applicants with notes',
-            'Post workspace announcements & briefings',
-            'Schedule shifts, display QR & verify check-ins',
-        ],
     },
     {
-        code: 'PASS 03',
         role: 'Community Volunteer',
-        tagline: 'Seamless journey from discovery to certified hours.',
+        badge: 'Member Portal',
         email: 'volunteer@volunsync.test',
-        perks: [
-            'Apply to divisions & track live status timeline',
-            'Access division workspace & shift calendar',
-            'Scan shift QR + GPS to log verified hours',
-        ],
     },
 ];
 
-const faqs = [
-    {
-        q: 'How does VolunSync prevent volunteer shift double-booking?',
-        a: 'Every shift assignment passes through a server-side ShiftConflictService that checks whether the volunteer already has an overlapping shift (existing.start < new.end AND existing.end > new.start) across all divisions and events.',
-    },
-    {
-        q: 'How does QR + Geolocation attendance verification work?',
-        a: 'Each shift generates a unique QR token. When a volunteer scans the QR on site, VolunSync validates their GPS coordinates server-side using the Haversine distance formula against the event venue radius before logging attendance.',
-    },
-    {
-        q: 'What happens when a volunteer application is accepted?',
-        a: 'Moving an application to Accepted immediately grants that volunteer access to their Division Workspace — displaying coordinator contacts, announcements, peer directory, and their division shift schedule.',
-    },
-    {
-        q: 'Can organizers and coordinators manage different scopes?',
-        a: 'Yes. Role-Based Access Control isolates permissions so Organizers oversee every event and division, while Division Coordinators only screen applicants, schedule shifts, and verify attendance for their assigned divisions.',
-    },
-];
+const smoothEase = [0.22, 1, 0.36, 1] as const;
 
-const springCard = {
+const springSnappy = {
     type: 'spring' as const,
-    stiffness: 320,
+    stiffness: 340,
     damping: 26,
 };
 
-function Reveal({
-    children,
-    delayMs = 0,
-    className = '',
-}: {
-    children: ReactNode;
-    delayMs?: number;
-    className?: string;
-}) {
-    const ref = useRef<HTMLDivElement | null>(null);
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-        const el = ref.current;
-        if (!el || typeof IntersectionObserver === 'undefined') {
-            setVisible(true);
-            return;
-        }
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0]?.isIntersecting) {
-                    setVisible(true);
-                    observer.disconnect();
-                }
-            },
-            { threshold: 0.1 },
-        );
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, []);
+function ScrollProgressBar() {
+    'use no memo';
+    const { scrollYProgress } = useScroll();
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 140,
+        damping: 28,
+        restDelta: 0.001,
+    });
 
     return (
-        <div
-            ref={ref}
-            style={{ transitionDelay: `${delayMs}ms` }}
-            className={`transition-all duration-700 ease-out ${
-                visible
-                    ? 'translate-y-0 opacity-100'
-                    : 'translate-y-6 opacity-0'
-            } ${className}`}
-        >
-            {children}
-        </div>
+        <motion.div
+            style={{ scaleX }}
+            className="fixed top-0 right-0 left-0 z-50 h-[3px] origin-left bg-gradient-to-r from-[#0E838F] via-[#1C6EC7] to-[#2F5CE6]"
+        />
     );
 }
 
@@ -322,7 +204,7 @@ function AnimatedCounter({
     padZero?: boolean;
 }) {
     const ref = useRef<HTMLSpanElement | null>(null);
-    const [display, setDisplay] = useState(target);
+    const [display, setDisplay] = useState(0);
     const hasAnimated = useRef(false);
 
     useEffect(() => {
@@ -336,12 +218,12 @@ function AnimatedCounter({
             (entries) => {
                 if (entries[0]?.isIntersecting && !hasAnimated.current) {
                     hasAnimated.current = true;
-                    const duration = 850;
+                    const duration = 950;
                     const start = performance.now();
 
                     const tick = (now: number) => {
                         const progress = Math.min(1, (now - start) / duration);
-                        const eased = 1 - Math.pow(1 - progress, 3);
+                        const eased = 1 - Math.pow(1 - progress, 4);
                         setDisplay(target * eased);
                         if (progress < 1) {
                             requestAnimationFrame(tick);
@@ -376,121 +258,698 @@ function AnimatedCounter({
     );
 }
 
-function ScrollProgressBar() {
+function CurvedRibbon({ reverse = false }: { reverse?: boolean }) {
     'use no memo';
-    const { scrollYProgress } = useScroll();
-    const scaleX = useSpring(scrollYProgress, {
-        stiffness: 180,
-        damping: 30,
-        restDelta: 0.001,
+    const uid = useId().replace(/:/g, '');
+    const pathId = `vs-ribbon-path-${uid}`;
+    const gradId = `vs-ribbon-grad-${uid}`;
+    const shadowId = `vs-ribbon-shadow-${uid}`;
+
+    const textPathRef = useRef<SVGTextPathElement | null>(null);
+    const measureRef = useRef<SVGTextElement | null>(null);
+    const chunkWidthRef = useRef<number>(1820);
+    const offsetRef = useRef<number>(0);
+
+    const { scrollY } = useScroll();
+    const scrollVelocity = useVelocity(scrollY);
+    const smoothVelocity = useSpring(scrollVelocity, {
+        damping: 55,
+        stiffness: 240,
     });
 
-    return (
-        <motion.div
-            style={{ scaleX }}
-            className="fixed top-0 right-0 left-0 z-50 h-[3px] origin-left bg-gradient-to-r from-[#008c8d] via-[#0284c7] to-[#2563eb]"
-        />
-    );
-}
+    const singleChunk = `${ribbonItems.join('   •   ')}   •   `;
+    const repeatedText = Array.from({ length: 6 }, () => singleChunk).join('');
 
-function HeroParallaxPhoto({
-    stats,
-}: {
-    stats: {
-        events: number;
-        divisions: number;
-        shifts: number;
-    };
-}) {
-    'use no memo';
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ['start start', 'end start'],
+    // Asymmetric gentle circular arc (R = 3200, peak around 67% across the viewport)
+    // Left edge y ≈ 222, peak at x=960 y = 75, right edge y ≈ 111
+    const curvePath = 'M -1200 914 A 3200 3200 0 0 1 3120 914';
+
+    useEffect(() => {
+        const updateLength = () => {
+            if (measureRef.current) {
+                const len = measureRef.current.getComputedTextLength();
+                if (len > 100) {
+                    chunkWidthRef.current = len;
+                }
+            }
+        };
+        updateLength();
+        document.fonts?.ready.then(updateLength);
+    }, []);
+
+    useAnimationFrame((_, delta) => {
+        const tp = textPathRef.current;
+        if (!tp) return;
+
+        const dt = Math.min(delta, 50) / 1000;
+        const baseSpeed = 30; // calm, slow px/sec
+        const velocityBoost = Math.min(
+            Math.abs(smoothVelocity.get()) * 0.04,
+            65,
+        );
+        const dir = reverse ? 1 : -1;
+        const chunk = chunkWidthRef.current;
+
+        let next = offsetRef.current + dir * (baseSpeed + velocityBoost) * dt;
+        while (next <= -chunk) next += chunk;
+        while (next > 0) next -= chunk;
+
+        offsetRef.current = next;
+        tp.setAttribute('startOffset', `${next.toFixed(2)}px`);
     });
-    const imgY = useTransform(scrollYProgress, [0, 1], ['0%', '10%']);
-    const cardY = useTransform(scrollYProgress, [0, 1], [0, -18]);
 
     return (
         <div
-            ref={containerRef}
-            style={{ animationDelay: '180ms' }}
-            className="animate-vs-scale lg:col-span-5"
+            aria-hidden="true"
+            className="relative z-20 mt-6 mb-0 w-full overflow-hidden py-1 select-none sm:mt-8 sm:mb-0"
         >
-            <div className="group relative mx-auto aspect-[4/4.3] w-full max-w-md overflow-hidden bg-slate-200 shadow-raised">
-                <motion.img
-                    src="/images/hero-community.jpg"
-                    alt="VolunSync community volunteers coordinating at an event"
-                    style={{ y: imgY }}
-                    className="h-[112%] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                />
-
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-                {/* Signature Latent/27 Stepped Pixel Cutout (Top-Left) */}
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute top-0 left-0"
+            <div className="mx-auto flex w-full justify-center">
+                <svg
+                    viewBox="0 0 1440 310"
+                    className="h-auto w-full min-w-[1020px] shrink-0 overflow-visible"
                 >
-                    <div className="h-8 w-24 bg-[#fafaf9] dark:bg-[#0c0b0b]" />
-                    <div className="h-8 w-16 bg-[#fafaf9] dark:bg-[#0c0b0b]" />
-                    <div className="h-8 w-8 bg-[#fafaf9] dark:bg-[#0c0b0b]" />
-                </div>
+                    <defs>
+                        <path id={pathId} d={curvePath} fill="none" />
+                        <linearGradient
+                            id={gradId}
+                            x1="0%"
+                            y1="0%"
+                            x2="100%"
+                            y2="0%"
+                        >
+                            <stop offset="0%" stopColor="#0E838F" />
+                            <stop offset="50%" stopColor="#1C6EC7" />
+                            <stop offset="100%" stopColor="#2F5CE6" />
+                        </linearGradient>
+                        <filter
+                            id={shadowId}
+                            x="-10%"
+                            y="-35%"
+                            width="120%"
+                            height="180%"
+                        >
+                            <feDropShadow
+                                dx="0"
+                                dy="12"
+                                stdDeviation="16"
+                                floodColor="#1C6EC7"
+                                floodOpacity="0.3"
+                            />
+                        </filter>
+                    </defs>
 
-                {/* Top-Right Dark Monospace Edition Badge */}
-                <div className="absolute top-3.5 right-3.5 inline-flex items-center gap-2 bg-[#0e0f12]/90 px-3 py-1.5 font-mono text-[10px] font-medium tracking-wider text-white uppercase backdrop-blur-xs">
-                    <span className="size-1.5 animate-pulse rounded-full bg-[#34d399]" />
-                    ON-SITE OPS · 2026 EDITION
-                </div>
+                    {/* Hidden measurement text for exact seamless loop width */}
+                    <text
+                        ref={measureRef}
+                        opacity={0}
+                        fontSize="62"
+                        letterSpacing="0.06em"
+                        style={{ fontFamily: 'var(--font-display)' }}
+                    >
+                        {singleChunk}
+                    </text>
 
-                {/* Bottom-Left Floating Crisp White Spec Card with subtle scroll float */}
-                <motion.div
-                    style={{ y: cardY }}
-                    className="absolute right-4 bottom-4 left-4 max-w-[275px] bg-white p-4 text-xs shadow-lg dark:bg-card"
-                >
-                    <div className="grid grid-cols-[88px_1fr] items-center gap-y-2.5">
-                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
-                            Events
-                        </span>
-                        <span className="font-semibold text-foreground">
-                            {stats.events} active initiatives
-                        </span>
+                    {/* Asymmetric Curved Gradient Ribbon Band — Enlarged */}
+                    <path
+                        d={curvePath}
+                        fill="none"
+                        stroke={`url(#${gradId})`}
+                        strokeWidth="126"
+                        strokeLinecap="butt"
+                        filter={`url(#${shadowId})`}
+                    />
 
-                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
-                            Divisions
-                        </span>
-                        <span className="font-semibold text-foreground">
-                            {stats.divisions} teams · {stats.shifts} shifts
-                        </span>
-
-                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
-                            Guard
-                        </span>
-                        <span className="font-semibold text-primary">
-                            0% shift overlap
-                        </span>
-                    </div>
-                </motion.div>
+                    {/* Vertically Centered Flowing Display Typography — Enlarged */}
+                    <text
+                        fill="#FFFFFF"
+                        fontSize="62"
+                        letterSpacing="0.06em"
+                        dy="22"
+                        style={{ fontFamily: 'var(--font-display)' }}
+                    >
+                        <textPath
+                            ref={textPathRef}
+                            href={`#${pathId}`}
+                            startOffset="0px"
+                        >
+                            {repeatedText}
+                        </textPath>
+                    </text>
+                </svg>
             </div>
         </div>
     );
 }
 
+function WordRevealItem({
+    word,
+    progress,
+    range,
+    highlight = false,
+}: {
+    word: string;
+    progress: MotionValue<number>;
+    range: [number, number];
+    highlight?: boolean;
+}) {
+    'use no memo';
+    const opacity = useTransform(progress, range, [0.16, 1]);
+    const y = useTransform(progress, range, [5, 0]);
+
+    return (
+        <motion.span
+            style={{ opacity, y }}
+            className={`mr-[0.23em] inline-block will-change-[opacity,transform] ${
+                highlight ? 'text-[#2F5CE6]' : 'text-[#1A7D8C]'
+            }`}
+        >
+            {word}
+        </motion.span>
+    );
+}
+
+function ManifestoFloatingPill({
+    pill,
+    progress,
+}: {
+    pill: (typeof manifestoPills)[number];
+    progress: MotionValue<number>;
+}) {
+    'use no memo';
+    const start = pill.appearAt;
+    const opacity = useTransform(progress, [start, start + 0.05], [0, 1]);
+    const scale = useTransform(
+        progress,
+        [start, start + 0.07, start + 0.12],
+        [0.45, 1.08, 1],
+    );
+    const y = useTransform(progress, [start, start + 0.08], [22, 0]);
+    const rotate = useTransform(
+        progress,
+        [start, start + 0.1],
+        [pill.rotate * 2.2, pill.rotate],
+    );
+
+    return (
+        <motion.span
+            style={{ opacity, scale, y, rotate }}
+            whileHover={{
+                scale: 1.08,
+                rotate: 0,
+                transition: springSnappy,
+            }}
+            className={`absolute z-20 cursor-default rounded-full px-4 py-1.5 text-[11px] font-bold tracking-tight whitespace-nowrap shadow-[0_14px_30px_-10px_rgba(13,18,25,0.38)] select-none will-change-transform sm:px-6 sm:py-2.5 sm:text-sm md:text-base ${pill.bg} ${pill.position}`}
+        >
+            {pill.label}
+        </motion.span>
+    );
+}
+
+function ManifestoSection() {
+    'use no memo';
+    const containerRef = useRef<HTMLElement | null>(null);
+    const { scrollYProgress } = useScroll({
+        target: containerRef,
+        offset: ['start start', 'end end'],
+    });
+    const smoothProgress = useSpring(scrollYProgress, {
+        stiffness: 72,
+        damping: 24,
+        mass: 0.65,
+        restDelta: 0.001,
+    });
+
+    const words = manifestoText.split(' ');
+
+    return (
+        <section
+            ref={containerRef}
+            id="about"
+            className="relative -mt-6 min-h-[215vh] sm:-mt-10 sm:min-h-[245vh]"
+        >
+            <div className="sticky top-0 flex min-h-screen flex-col items-center justify-center px-5 pt-8 pb-16 text-center sm:px-8 sm:pt-10">
+                <motion.p
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.55, ease: smoothEase }}
+                    className="font-mono text-[11px] font-semibold tracking-[0.24em] text-[#5B6D7E] uppercase"
+                >
+                    Just about VolunSync
+                </motion.p>
+
+                <div className="relative mx-auto mt-7 w-full max-w-6xl py-4 sm:mt-9 sm:py-6">
+                    <h2 className="text-[clamp(1.95rem,5.2vw,4.35rem)] leading-[1.09] font-extrabold tracking-[-0.035em]">
+                        {words.map((word, idx) => {
+                            const start = (idx / words.length) * 0.88;
+                            const end = Math.min(
+                                1,
+                                start + (1 / words.length) * 2.2,
+                            );
+                            const isFinalWord = idx === words.length - 1;
+                            return (
+                                <WordRevealItem
+                                    key={`${word}-${idx}`}
+                                    word={word}
+                                    progress={smoothProgress}
+                                    range={[start, end]}
+                                    highlight={isFinalWord}
+                                />
+                            );
+                        })}
+                    </h2>
+
+                    {/* Floating Mini Info Pills Popping Right Over the Text */}
+                    {manifestoPills.map((pill) => (
+                        <ManifestoFloatingPill
+                            key={pill.label}
+                            pill={pill}
+                            progress={smoothProgress}
+                        />
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function StatsEditorialSection({
+    stats,
+}: {
+    stats: {
+        volunteers: number;
+        events: number;
+        shifts: number;
+        verified_hours: number;
+    };
+}) {
+    'use no memo';
+    const sectionRef = useRef<HTMLElement | null>(null);
+    const isInView = useInView(sectionRef, { once: true, amount: 0.15 });
+
+    return (
+        <section
+            ref={sectionRef}
+            className="relative overflow-hidden bg-[#DCE8F0] py-20 sm:py-28 lg:py-32"
+        >
+            <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+                <div className="grid lg:grid-cols-12">
+                    {/* Right-Shifted Editorial Column (~75% width, matching reference) */}
+                    <div className="lg:col-span-9 lg:col-start-4">
+                        {/* Top 4-Line Staggered Headline with Inline Micro-Captions */}
+                        <div className="text-[#0D1219]">
+                            {/* Line 1: Left small label + indented giant text */}
+                            <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2 sm:flex-nowrap sm:gap-x-12">
+                                <motion.span
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={
+                                        isInView
+                                            ? { opacity: 1, y: 0 }
+                                            : { opacity: 0, y: 10 }
+                                    }
+                                    transition={{
+                                        duration: 0.5,
+                                        ease: smoothEase,
+                                    }}
+                                    className="shrink-0 font-mono text-xs font-medium text-[#4A5D6E]"
+                                >
+                                    Since 2025
+                                </motion.span>
+                                <span className="block overflow-hidden">
+                                    <motion.span
+                                        initial={{ y: '105%' }}
+                                        animate={
+                                            isInView
+                                                ? { y: '0%' }
+                                                : { y: '105%' }
+                                        }
+                                        transition={{
+                                            duration: 0.72,
+                                            ease: smoothEase,
+                                        }}
+                                        className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] uppercase"
+                                    >
+                                        WE HAVE BEEN HELPING
+                                    </motion.span>
+                                </span>
+                            </div>
+
+                            {/* Line 2 */}
+                            <span className="mt-1 block overflow-hidden">
+                                <motion.span
+                                    initial={{ y: '105%' }}
+                                    animate={
+                                        isInView ? { y: '0%' } : { y: '105%' }
+                                    }
+                                    transition={{
+                                        duration: 0.72,
+                                        delay: 0.08,
+                                        ease: smoothEase,
+                                    }}
+                                    className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] uppercase"
+                                >
+                                    COMMUNITIES WITH
+                                </motion.span>
+                            </span>
+
+                            {/* Line 3 */}
+                            <span className="mt-1 block overflow-hidden">
+                                <motion.span
+                                    initial={{ y: '105%' }}
+                                    animate={
+                                        isInView ? { y: '0%' } : { y: '105%' }
+                                    }
+                                    transition={{
+                                        duration: 0.72,
+                                        delay: 0.16,
+                                        ease: smoothEase,
+                                    }}
+                                    className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] text-[#1A7D8C] uppercase"
+                                >
+                                    EFFORTLESS VOLUNTEER
+                                </motion.span>
+                            </span>
+
+                            {/* Line 4 + Right-Aligned Micro-Caption */}
+                            <div className="mt-1 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                <span className="block overflow-hidden">
+                                    <motion.span
+                                        initial={{ y: '105%' }}
+                                        animate={
+                                            isInView
+                                                ? { y: '0%' }
+                                                : { y: '105%' }
+                                        }
+                                        transition={{
+                                            duration: 0.72,
+                                            delay: 0.24,
+                                            ease: smoothEase,
+                                        }}
+                                        className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] uppercase"
+                                    >
+                                        OPERATIONS
+                                    </motion.span>
+                                </span>
+
+                                <motion.p
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={
+                                        isInView
+                                            ? { opacity: 1, y: 0 }
+                                            : { opacity: 0, y: 12 }
+                                    }
+                                    transition={{
+                                        duration: 0.6,
+                                        delay: 0.3,
+                                        ease: smoothEase,
+                                    }}
+                                    className="max-w-[230px] text-left text-[11px] leading-snug text-[#4A5D6E] sm:pb-1 sm:text-right"
+                                >
+                                    based on structured recruitment, division
+                                    workspaces, zero-overlap shifts and QR + GPS
+                                    check-ins
+                                </motion.p>
+                            </div>
+                        </div>
+
+                        {/* Middle Two-Column Micro-Copy Row */}
+                        <div className="mt-14 grid gap-8 sm:mt-20 sm:grid-cols-2 lg:pl-16">
+                            <motion.p
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={
+                                    isInView
+                                        ? { opacity: 1, y: 0 }
+                                        : { opacity: 0, y: 16 }
+                                }
+                                transition={{
+                                    duration: 0.6,
+                                    delay: 0.25,
+                                    ease: smoothEase,
+                                }}
+                                className="max-w-[215px] text-xs leading-relaxed text-[#425566]"
+                            >
+                                Community events move fast and volunteer teams
+                                are always evolving — we keep every division
+                                aligned.
+                            </motion.p>
+
+                            <motion.p
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={
+                                    isInView
+                                        ? { opacity: 1, y: 0 }
+                                        : { opacity: 0, y: 16 }
+                                }
+                                transition={{
+                                    duration: 0.6,
+                                    delay: 0.32,
+                                    ease: smoothEase,
+                                }}
+                                className="max-w-[225px] text-xs leading-relaxed text-[#425566] sm:ml-auto sm:text-right"
+                            >
+                                Built with conflict-free shift guards and
+                                Haversine GPS so organizers stay effortlessly in
+                                control.
+                            </motion.p>
+                        </div>
+
+                        {/* Bottom 2x2 Giant Clipped-Baseline Numbers Grid */}
+                        <div className="mt-14 grid grid-cols-1 gap-x-12 gap-y-12 sm:mt-20 sm:grid-cols-2 lg:pl-16">
+                            {[
+                                {
+                                    value: stats.volunteers,
+                                    suffix: '+',
+                                    padZero: false,
+                                    caption:
+                                        'confirmed volunteers active across divisions',
+                                },
+                                {
+                                    value: stats.events,
+                                    suffix: '',
+                                    padZero: true,
+                                    caption:
+                                        'open and ongoing community events',
+                                },
+                                {
+                                    value: stats.shifts,
+                                    suffix: '+',
+                                    padZero: false,
+                                    caption:
+                                        'conflict-free scheduled division shifts',
+                                },
+                                {
+                                    value: stats.verified_hours,
+                                    suffix: 'H',
+                                    padZero: false,
+                                    caption:
+                                        'verified service hours logged via QR + GPS',
+                                },
+                            ].map((metric, idx) => (
+                                <div key={metric.caption} className="group">
+                                    {/* Clipped Baseline Mask for Signature Sliced-Bottom Numbers */}
+                                    <div className="overflow-hidden border-b border-[#1A7D8C]/20 pb-0">
+                                        <motion.p
+                                            initial={{ y: '100%' }}
+                                            animate={
+                                                isInView
+                                                    ? { y: '13%' }
+                                                    : { y: '100%' }
+                                            }
+                                            transition={{
+                                                duration: 0.85,
+                                                delay: 0.2 + idx * 0.1,
+                                                ease: smoothEase,
+                                            }}
+                                            className="font-sans text-[clamp(4.4rem,9.2vw,7.4rem)] leading-[0.82] font-black tracking-[-0.055em] text-white transition-colors duration-300 select-none group-hover:text-[#1A7D8C]"
+                                        >
+                                            <AnimatedCounter
+                                                target={metric.value}
+                                                suffix={metric.suffix}
+                                                padZero={metric.padZero}
+                                            />
+                                        </motion.p>
+                                    </div>
+                                    <p className="mt-2.5 text-xs font-medium text-[#354858]">
+                                        {metric.caption}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function HeroVisualStage({
+    volunteers,
+    events,
+}: {
+    volunteers: number;
+    events: number;
+}) {
+    'use no memo';
+    const stageRef = useRef<HTMLDivElement | null>(null);
+    const { scrollYProgress } = useScroll({
+        target: stageRef,
+        offset: ['start end', 'end start'],
+    });
+    const smoothScroll = useSpring(scrollYProgress, {
+        stiffness: 110,
+        damping: 26,
+    });
+    const imageY = useTransform(smoothScroll, [0, 1], [28, -28]);
+    const imageScale = useTransform(smoothScroll, [0, 0.5, 1], [0.96, 1.02, 1]);
+    const chipLeftY = useTransform(smoothScroll, [0, 1], [22, -26]);
+    const chipRightY = useTransform(smoothScroll, [0, 1], [-14, 24]);
+
+    return (
+        <div
+            ref={stageRef}
+            className="relative mx-auto mt-10 max-w-5xl px-4 sm:mt-14 sm:px-6"
+        >
+            <motion.div
+                initial={{ opacity: 0, y: 36, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.85, delay: 0.32, ease: smoothEase }}
+                className="relative overflow-hidden rounded-[2rem] border border-[#DCE7EF] bg-[#EDF4F8] shadow-[0_28px_70px_-30px_rgba(14,131,143,0.22)] sm:rounded-[2.75rem]"
+            >
+                <motion.div
+                    style={{ y: imageY, scale: imageScale }}
+                    className="will-change-transform"
+                >
+                    <img
+                        src="/images/landing-hero-3d.jpg"
+                        alt="VolunSync 3D community event coordination diorama"
+                        className="aspect-[16/9] w-full object-cover"
+                    />
+                </motion.div>
+
+                {/* Subtle Floating Telemetry Chips */}
+                <motion.div
+                    style={{ y: chipLeftY }}
+                    className="pointer-events-none absolute bottom-4 left-4 hidden items-center gap-2.5 rounded-full border border-white/80 bg-white/90 px-4 py-2 text-xs font-semibold text-[#0D1219] shadow-[0_12px_30px_-10px_rgba(13,18,25,0.18)] backdrop-blur-md sm:flex"
+                >
+                    <span className="flex size-2 rounded-full bg-[#0E838F] ring-4 ring-[#0E838F]/20" />
+                    <span>{volunteers}+ verified volunteers</span>
+                </motion.div>
+
+                <motion.div
+                    style={{ y: chipRightY }}
+                    className="pointer-events-none absolute top-4 right-4 hidden items-center gap-2 rounded-full border border-white/80 bg-[#0D1219]/90 px-4 py-2 font-mono text-[11px] font-medium text-white shadow-[0_12px_30px_-10px_rgba(13,18,25,0.3)] backdrop-blur-md sm:flex"
+                >
+                    <Sparkles className="size-3.5 text-[#7CC0C9]" />
+                    <span>{events} ACTIVE EVENTS · 0% OVERLAP</span>
+                </motion.div>
+            </motion.div>
+        </div>
+    );
+}
+
+function PillarCard({
+    pillar,
+    index,
+}: {
+    pillar: (typeof pillars)[number];
+    index: number;
+}) {
+    'use no memo';
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 36 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{
+                duration: 0.7,
+                delay: (index % 2) * 0.12,
+                ease: smoothEase,
+            }}
+        >
+            <Link
+                href={pillar.href}
+                className="group block rounded-[2rem] border border-[#DCE7EF] bg-white p-4 shadow-[0_12px_36px_-22px_rgba(13,18,25,0.14)] transition-all duration-500 hover:-translate-y-1.5 hover:border-[#1A7D8C]/40 hover:shadow-[0_28px_54px_-24px_rgba(14,131,143,0.22)] sm:p-5"
+            >
+                {/* 3D Studio Visual Stage */}
+                <div className="relative overflow-hidden rounded-[1.4rem] bg-[#EDF4F8]">
+                    <img
+                        src={pillar.image}
+                        alt={pillar.title}
+                        loading="lazy"
+                        className="aspect-[4/3] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
+                    />
+                    <span className="absolute top-3.5 left-3.5 rounded-full bg-white/90 px-3 py-1 font-mono text-[11px] font-semibold text-[#1A7D8C] shadow-xs backdrop-blur-sm">
+                        {pillar.num}
+                    </span>
+                </div>
+
+                {/* Editorial Metadata */}
+                <div className="px-1.5 pt-5 pb-1.5">
+                    <div className="flex items-start justify-between gap-3">
+                        <h3 className="text-xl font-bold tracking-[-0.02em] text-[#0D1219] transition-colors group-hover:text-[#1A7D8C] sm:text-2xl">
+                            {pillar.title}
+                        </h3>
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#DCE7EF] bg-[#F4F8FA] text-[#0D1219] transition-all duration-300 group-hover:rotate-45 group-hover:border-[#0E838F] group-hover:bg-gradient-to-tr group-hover:from-[#0E838F] group-hover:to-[#2F5CE6] group-hover:text-white">
+                            <ArrowUpRight className="size-4" />
+                        </span>
+                    </div>
+
+                    <p className="mt-2.5 text-sm leading-relaxed text-[#526577]">
+                        {pillar.description}
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                        {pillar.tags.map((tag) => (
+                            <span
+                                key={tag}
+                                className="rounded-full border border-[#DCE7EF] bg-[#F6FAFC] px-3 py-1 font-mono text-[11px] font-medium text-[#4A5D6E] transition-colors group-hover:border-[#1A7D8C]/25 group-hover:text-[#1A7D8C]"
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </Link>
+        </motion.div>
+    );
+}
+
 export default function Welcome({
     stats = {
-        volunteers: 105,
-        events: 5,
+        volunteers: 107,
+        events: 6,
         divisions: 12,
-        shifts: 24,
-        verified_hours: 120,
+        shifts: 26,
+        verified_hours: 61.4,
     },
     featuredEvents = [],
 }: WelcomeProps) {
     'use no memo';
     const { auth } = usePage<{ auth: Auth }>().props;
     const user = auth?.user;
-    const [openFaq, setOpenFaq] = useState<number | null>(0);
+    const [activeStage, setActiveStage] = useState(3);
     const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+    const [scrolled, setScrolled] = useState(false);
+
+    const heroRef = useRef<HTMLElement | null>(null);
+    const { scrollYProgress: heroScroll } = useScroll({
+        target: heroRef,
+        offset: ['start start', 'end start'],
+    });
+    const smoothHeroScroll = useSpring(heroScroll, {
+        stiffness: 120,
+        damping: 26,
+    });
+    const heroBadgeY = useTransform(smoothHeroScroll, [0, 1], [0, -34]);
+    const heroSmoothWordX = useTransform(smoothHeroScroll, [0, 1], [0, 26]);
+    const loopRotate = useTransform(smoothHeroScroll, [0, 1], [0, 28]);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 24);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     const copyEmail = (email: string) => {
         navigator.clipboard?.writeText(email);
@@ -500,455 +959,417 @@ export default function Welcome({
 
     return (
         <MotionConfig reducedMotion="user">
-            <Head title="VolunSync — Community Volunteer Platform" />
+            <Head title="VolunSync — Community Event & Volunteer Platform" />
             <ScrollProgressBar />
 
-            <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
-                {/* Sticky Architectural Navbar — Shared with Explore */}
-                <PublicNavbar active="home" />
-
-                {/* Architectural Grid Hero Section — Latent/27 UI + Motion */}
-                <section className="bg-vs-grid relative border-b border-border/70">
-                    <div className="mx-auto max-w-7xl px-4 pt-8 pb-14 sm:px-6 lg:px-8 lg:pt-10 lg:pb-16">
-                        {/* Top Metadata Row */}
-                        <div className="animate-vs-reveal mb-10 flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
-                            <span className="flex items-center gap-2">
-                                <span className="size-2 animate-pulse rounded-full bg-[#008c8d]" />
-                                COMMUNITY VOLUNTEER PLATFORM — EDITION 2026
-                            </span>
-                            <span>
-                                [ {stats.volunteers}+ VOLUNTEERS · ZERO-OVERLAP
-                                SHIFTS ]
-                            </span>
-                        </div>
-
-                        <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-8">
-                            {/* Left Column: Staggered Block-Highlighted Headline */}
-                            <div className="lg:col-span-7">
-                                <h1 className="flex flex-col items-start gap-1 text-4xl font-bold tracking-[-0.035em] sm:text-5xl lg:text-[4.15rem] lg:leading-[1.08]">
-                                    <span
-                                        style={{ animationDelay: '60ms' }}
-                                        className="animate-vs-reveal inline-block bg-white px-3 py-0.5 text-[#0e0f12] shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:bg-card dark:text-foreground"
-                                    >
-                                        The platform for
-                                    </span>
-                                    <span
-                                        style={{ animationDelay: '150ms' }}
-                                        className="animate-vs-reveal inline-block bg-white px-3 py-0.5 text-[#0e0f12] shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:bg-card dark:text-foreground"
-                                    >
-                                        communities serving
-                                    </span>
-                                    <span
-                                        style={{ animationDelay: '240ms' }}
-                                        className="animate-vs-reveal inline-block bg-gradient-to-r from-[#008c8d] via-[#0284c7] to-[#2563eb] px-3 py-0.5 text-white"
-                                    >
-                                        together cleanly.
-                                    </span>
-                                </h1>
-
-                                <p
-                                    style={{ animationDelay: '320ms' }}
-                                    className="animate-vs-reveal mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base"
-                                >
-                                    Structured recruitment, division screening,
-                                    automated team workspaces, overlap-free
-                                    shift scheduling, and QR + GPS attendance
-                                    verification — all in one unified platform
-                                    for modern community events.
-                                </p>
-
-                                {/* Dual Pill CTAs with Spring Physics */}
-                                <div
-                                    style={{ animationDelay: '400ms' }}
-                                    className="animate-vs-reveal mt-8 flex flex-wrap items-center gap-3"
-                                >
-                                    <motion.div
-                                        whileHover={{ scale: 1.03 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        transition={springCard}
-                                    >
-                                        <Link
-                                            href="/events"
-                                            className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#008c8d] to-[#2563eb] py-1.5 pr-1.5 pl-5 text-sm font-semibold text-white shadow-sm"
-                                        >
-                                            <span>Explore open events</span>
-                                            <span className="flex size-8 items-center justify-center rounded-full bg-white text-[#0e0f12] transition-transform duration-300 group-hover:rotate-45">
-                                                <ArrowUpRight className="size-4" />
-                                            </span>
-                                        </Link>
-                                    </motion.div>
-
-                                    <motion.div
-                                        whileHover={{ scale: 1.03 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        transition={springCard}
-                                    >
-                                        <Link
-                                            href={user ? '/dashboard' : '/login'}
-                                            className="group inline-flex items-center gap-3 rounded-full border border-border bg-white py-1.5 pr-1.5 pl-5 text-sm font-semibold text-[#0e0f12] shadow-xs transition-colors hover:bg-surface dark:bg-card dark:text-foreground"
-                                        >
-                                            <span>
-                                                {user
-                                                    ? 'Open my dashboard'
-                                                    : 'Sign in to console'}
-                                            </span>
-                                            <span className="flex size-8 items-center justify-center rounded-full bg-[#0e0f12] text-white transition-transform duration-300 group-hover:rotate-45 dark:bg-white dark:text-[#0e0f12]">
-                                                <ArrowUpRight className="size-4" />
-                                            </span>
-                                        </Link>
-                                    </motion.div>
-                                </div>
-
-                                {/* Overlapping Avatar Stack + Social Proof */}
-                                <div
-                                    style={{ animationDelay: '480ms' }}
-                                    className="animate-vs-reveal mt-8 flex items-center gap-3.5"
-                                >
-                                    <div className="flex -space-x-2.5">
-                                        {avatarStack.map((av) => (
-                                            <div
-                                                key={av.initials}
-                                                className={`flex size-9 items-center justify-center rounded-full text-xs font-bold ring-2 ring-[#fafaf9] dark:ring-background ${av.bg}`}
-                                            >
-                                                {av.initials}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="text-xs leading-snug">
-                                        <p className="font-bold text-foreground">
-                                            {stats.volunteers}+ volunteers
-                                            confirmed
-                                        </p>
-                                        <p className="text-muted-foreground">
-                                            Across {stats.events} community
-                                            initiatives & {stats.divisions}{' '}
-                                            divisions
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Column: Stepped Stair-Cutout Editorial Photo with Scroll Parallax */}
-                            <HeroParallaxPhoto stats={stats} />
-                        </div>
-                    </div>
-                </section>
-
-                {/* Crisp White Asterisk Marquee Strip */}
-                <div className="overflow-hidden border-b border-border bg-white py-4 dark:bg-card">
-                    <div className="animate-vs-marquee flex w-max items-center gap-7 whitespace-nowrap">
-                        {[...tickerItems, ...tickerItems, ...tickerItems].map(
-                            (item, idx) => (
-                                <span
-                                    key={`${item}-${idx}`}
-                                    className="flex items-center gap-7 text-base font-medium tracking-tight text-foreground sm:text-lg"
-                                >
-                                    <span>{item}</span>
-                                    <span className="font-mono text-xl font-bold text-[#008c8d]">
-                                        *
-                                    </span>
-                                </span>
-                            ),
-                        )}
-                    </div>
-                </div>
-
-                {/* [ VolunSync in numbers ] — Rolling Animated Counter Grid */}
-                <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-                    <div className="mb-8 flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-mono text-xs text-muted-foreground">
-                            <span className="font-semibold text-foreground">
-                                [ VolunSync in numbers ]
-                            </span>{' '}
-                            — growing with every community event
-                        </p>
-                        <span className="font-mono text-xs text-muted-foreground">
-                            2025 → 2026
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 border-y border-border lg:grid-cols-4">
-                        {[
-                            {
-                                label: 'Volunteers',
-                                value: stats.volunteers,
-                                suffix: '+',
-                                padZero: false,
-                            },
-                            {
-                                label: 'Community Events',
-                                value: stats.events,
-                                suffix: '',
-                                padZero: true,
-                            },
-                            {
-                                label: 'Scheduled Shifts',
-                                value: stats.shifts,
-                                suffix: '',
-                                padZero: true,
-                            },
-                            {
-                                label: 'Verified Hours',
-                                value: stats.verified_hours,
-                                suffix: 'h',
-                                padZero: false,
-                            },
-                        ].map((metric, idx) => (
-                            <div
-                                key={metric.label}
-                                className={`py-8 ${idx > 0 ? 'border-l border-border pl-6' : 'pr-6'} ${idx >= 2 ? 'border-t border-border lg:border-t-0' : ''}`}
-                            >
-                                <p className="font-mono text-xs text-muted-foreground">
-                                    {metric.label}
-                                </p>
-                                <p className="mt-2 font-mono text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-                                    <AnimatedCounter
-                                        target={metric.value}
-                                        suffix={metric.suffix}
-                                        padZero={metric.padZero}
-                                    />
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* Editorial Statement + Dark Contrast Admission Pass */}
-                <section
-                    id="why"
-                    className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
+            <div className="min-h-screen overflow-x-clip bg-[#F4F8FA] text-[#0D1219] selection:bg-[#1A7D8C]/20 selection:text-[#0D1219]">
+                {/* Minimal Editorial Floating Navbar (two26.studio rhythm) */}
+                <header
+                    className={`fixed top-0 right-0 left-0 z-40 transition-all duration-300 ${
+                        scrolled
+                            ? 'border-b border-[#DCE7EF]/90 bg-[#F4F8FA]/85 py-3 shadow-[0_8px_30px_-18px_rgba(13,18,25,0.14)] backdrop-blur-xl'
+                            : 'bg-transparent py-5'
+                    }`}
                 >
-                    <div className="grid items-center gap-10 lg:grid-cols-12">
-                        <Reveal className="lg:col-span-7">
-                            <p className="font-mono text-xs text-muted-foreground">
-                                -- It&apos;s more than{' '}
-                                <span className="font-semibold text-primary">
-                                    [ just a spreadsheet ]
-                                </span>
-                            </p>
-                            <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em] sm:text-5xl sm:leading-[1.08]">
-                                One calm operating system built around a single
-                                goal: making community volunteering effortless.
-                            </h2>
-                            <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                                From first application to final check-out,
-                                VolunSync replaces disconnected chat groups,
-                                manual attendance sheets, and conflicting shift
-                                tables with a fast, role-isolated workspace.
-                            </p>
-                        </Reveal>
+                    <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+                        {/* Left Pill Links */}
+                        <nav className="flex items-center gap-2">
+                            <a
+                                href="#pillars"
+                                className="rounded-full border border-[#DCE7EF] bg-white/85 px-3.5 py-1.5 text-xs font-semibold text-[#0D1219] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
+                            >
+                                Features
+                            </a>
+                            <Link
+                                href="/events"
+                                className="rounded-full border border-[#DCE7EF] bg-white/85 px-3.5 py-1.5 text-xs font-semibold text-[#0D1219] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
+                            >
+                                Open events
+                            </Link>
+                        </nav>
 
-                        {/* Dark Contrast Volunteer Admission Pass Card with Spring Hover */}
-                        <Reveal delayMs={120} className="lg:col-span-5">
+                        {/* Center Wordmark */}
+                        <Link
+                            href="/"
+                            className="text-lg font-extrabold tracking-[-0.04em] text-[#1A7D8C] sm:text-xl"
+                        >
+                            <span>VolunSync</span>
+                        </Link>
+
+                        {/* Right Member Access + Primary Pill CTA */}
+                        <div className="flex items-center gap-3">
+                            {!user && (
+                                <Link
+                                    href="/login"
+                                    className="hidden flex-col text-right leading-tight sm:flex"
+                                >
+                                    <span className="text-[11px] font-bold text-[#0D1219] transition-colors hover:text-[#1A7D8C]">
+                                        Member Access
+                                    </span>
+                                    <span className="text-[10px] text-[#64748B]">
+                                        Sign in to console
+                                    </span>
+                                </Link>
+                            )}
+
                             <motion.div
-                                whileHover={{ y: -6, rotate: -0.5 }}
-                                transition={springCard}
-                                className="relative overflow-hidden rounded-2xl bg-[#0e0f12] p-6 text-white shadow-raised"
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.97 }}
+                                transition={springSnappy}
                             >
-                                <div className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-gradient-to-br from-[#008c8d]/40 to-[#2563eb]/30 blur-3xl" />
-
-                                <div className="relative flex items-center justify-between border-b border-dashed border-white/15 pb-4 font-mono text-[11px]">
-                                    <span className="text-[#34d399]">
-                                        VOLUNTEER PASS · EDITION 26
+                                <Link
+                                    href={user ? '/dashboard' : '/register'}
+                                    className="group inline-flex items-center gap-2.5 rounded-full bg-[#0D1219] py-1.5 pr-1.5 pl-4 text-xs font-semibold text-white shadow-[0_10px_24px_-12px_rgba(13,18,25,0.5)]"
+                                >
+                                    <span>
+                                        {user ? 'Open console' : 'Get started'}
                                     </span>
-                                    <Link
-                                        href="/register"
-                                        className="text-white/70 underline-offset-4 hover:text-white hover:underline"
-                                    >
-                                        Get pass →
-                                    </Link>
-                                </div>
-
-                                <div className="relative my-6 flex items-center justify-between gap-4">
-                                    <div>
-                                        <p className="font-mono text-xs tracking-widest text-white/50 uppercase">
-                                            VOLUNSYNC 26
-                                        </p>
-                                        <h3 className="mt-1 text-2xl font-bold tracking-tight">
-                                            Verified Member
-                                        </h3>
-                                        <p className="mt-1 flex items-center gap-1.5 text-xs text-white/65">
-                                            <ShieldCheck className="size-3.5 text-[#34d399]" />
-                                            QR + Haversine GPS Enabled
-                                        </p>
-                                    </div>
-                                    <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-white p-2 text-[#0e0f12]">
-                                        <QrCode className="size-10" />
-                                    </div>
-                                </div>
-
-                                <div className="relative grid grid-cols-2 gap-4 border-t border-dashed border-white/15 pt-4 font-mono text-xs">
-                                    <div>
-                                        <span className="text-[10px] text-white/45 uppercase">
-                                            Access
-                                        </span>
-                                        <p className="mt-0.5 font-semibold text-white">
-                                            All Open Events
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] text-white/45 uppercase">
-                                            Overlap Guard
-                                        </span>
-                                        <p className="mt-0.5 font-semibold text-[#34d399]">
-                                            0% Double-Booking
-                                        </p>
-                                    </div>
-                                </div>
+                                    <span className="flex size-7 items-center justify-center rounded-full bg-gradient-to-tr from-[#0E838F] to-[#2F5CE6] text-white transition-transform duration-300 group-hover:rotate-45">
+                                        <ArrowUpRight className="size-3.5" />
+                                    </span>
+                                </Link>
                             </motion.div>
-                        </Reveal>
+                        </div>
                     </div>
+                </header>
 
-                    {/* -- 01 / Why VolunSync */}
-                    <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {whyItems.map((item, idx) => (
-                            <Reveal key={item.num} delayMs={idx * 70}>
-                                <motion.div
-                                    whileHover={{ y: -5 }}
-                                    transition={springCard}
-                                    className="flex h-full flex-col justify-between rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
-                                >
-                                    <div>
-                                        <span className="font-mono text-xs font-semibold text-primary">
-                                            {item.num}
-                                        </span>
-                                        <h3 className="mt-3 text-base font-bold tracking-tight">
-                                            {item.title}
-                                        </h3>
-                                        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            </Reveal>
-                        ))}
-                    </div>
-                </section>
-
-                {/* -- 02 / Focus Areas */}
+                {/* HERO SECTION */}
                 <section
-                    id="focus"
-                    className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+                    ref={heroRef}
+                    className="relative pt-28 pb-6 sm:pt-36 sm:pb-10"
                 >
-                    <div className="mb-10 grid gap-4 lg:grid-cols-12">
-                        <div className="lg:col-span-5">
-                            <p className="font-mono text-xs text-primary">
-                                -- 02 / Focus areas
-                            </p>
-                            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-                                Four integrated pillars, one clean workflow.
-                            </h2>
+                    {/* Signature two26.studio Scroll-Drawn SVG Stroke Accent (Left Edge) */}
+                    <motion.svg
+                        style={{ rotate: loopRotate }}
+                        viewBox="0 0 180 180"
+                        fill="none"
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-[26rem] -left-16 hidden size-44 text-[#1A7D8C]/55 lg:block"
+                    >
+                        <motion.path
+                            d="M 24 90 C 24 44, 62 18, 102 28 C 142 38, 162 84, 146 122 C 130 160, 76 168, 44 140 C 16 116, 18 68, 56 46"
+                            stroke="currentColor"
+                            strokeWidth="2.4"
+                            strokeLinecap="round"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{
+                                duration: 1.6,
+                                delay: 0.4,
+                                ease: smoothEase,
+                            }}
+                        />
+                    </motion.svg>
+
+                    {/* Subtle Right Accent Stroke */}
+                    <svg
+                        viewBox="0 0 160 120"
+                        fill="none"
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-44 -right-8 hidden w-36 text-[#2F5CE6]/30 xl:block"
+                    >
+                        <motion.path
+                            d="M 10 95 C 48 18, 108 14, 150 64"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeDasharray="6 8"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{
+                                duration: 1.5,
+                                delay: 0.65,
+                                ease: smoothEase,
+                            }}
+                        />
+                    </svg>
+
+                    <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
+                        {/* Giant Condensed Stacked Headline with 3 Overlaid Mini Info Pills */}
+                        <div className="relative mt-2 inline-block w-full select-none">
+                            <h1 className="font-display text-[clamp(3.35rem,11.2vw,8.6rem)] leading-[0.88] tracking-[-0.015em] uppercase">
+                                <span className="block overflow-hidden">
+                                    <motion.span
+                                        initial={{ y: '105%' }}
+                                        animate={{ y: '0%' }}
+                                        transition={{
+                                            duration: 0.78,
+                                            delay: 0.08,
+                                            ease: smoothEase,
+                                        }}
+                                        className="block text-[#1A7D8C]"
+                                    >
+                                        EVENTS THAT RUN
+                                    </motion.span>
+                                </span>
+
+                                <span className="relative block overflow-hidden">
+                                    <motion.span
+                                        initial={{ y: '105%' }}
+                                        animate={{ y: '0%' }}
+                                        transition={{
+                                            duration: 0.78,
+                                            delay: 0.16,
+                                            ease: smoothEase,
+                                        }}
+                                        className="block text-[#1A7D8C]"
+                                    >
+                                        SUSPICIOUSLY
+                                    </motion.span>
+                                </span>
+
+                                <span className="block overflow-hidden">
+                                    <motion.span
+                                        style={{ x: heroSmoothWordX }}
+                                        initial={{ y: '105%' }}
+                                        animate={{ y: '0%' }}
+                                        transition={{
+                                            duration: 0.78,
+                                            delay: 0.24,
+                                            ease: smoothEase,
+                                        }}
+                                        className="block text-[#7BC0C9]"
+                                    >
+                                        SMOOTH
+                                    </motion.span>
+                                </span>
+                            </h1>
+
+                            {/* Mini Info Pill 1 — Top-Right over "EVENTS THAT RUN" */}
+                            <motion.span
+                                style={{ y: heroBadgeY }}
+                                initial={{ opacity: 0, scale: 0.7, rotate: -9 }}
+                                animate={{ opacity: 1, scale: 1, rotate: -3.2 }}
+                                transition={{
+                                    delay: 0.38,
+                                    type: 'spring',
+                                    stiffness: 300,
+                                    damping: 20,
+                                }}
+                                whileHover={{ rotate: 0, scale: 1.08 }}
+                                className="absolute top-[4%] right-[6%] z-10 cursor-default rounded-full bg-[#0D1219] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-white shadow-[0_12px_26px_-10px_rgba(13,18,25,0.5)] sm:top-[6%] sm:right-[17%] sm:px-5 sm:py-1.5 sm:text-xs"
+                            >
+                                Community event platform
+                            </motion.span>
+
+                            {/* Mini Info Pill 2 — Mid-Left between "EVENTS THAT RUN" & "SUSPICIOUSLY" */}
+                            <motion.span
+                                style={{ y: heroBadgeY }}
+                                initial={{ opacity: 0, scale: 0.7, rotate: 8 }}
+                                animate={{ opacity: 1, scale: 1, rotate: -4.5 }}
+                                transition={{
+                                    delay: 0.48,
+                                    type: 'spring',
+                                    stiffness: 300,
+                                    damping: 20,
+                                }}
+                                whileHover={{ rotate: 0, scale: 1.08 }}
+                                className="absolute top-[30%] left-[6%] z-10 cursor-default rounded-full bg-gradient-to-r from-[#1D6BC4] to-[#2F5CE6] px-3 py-1 font-mono text-[10px] font-bold tracking-wider text-white uppercase shadow-[0_12px_28px_-8px_rgba(47,92,230,0.6)] sm:top-[31%] sm:left-[18%] sm:px-4 sm:py-1.5 sm:text-[11px]"
+                            >
+                                QR + GPS · RBAC
+                            </motion.span>
+
+                            {/* Mini Info Pill 3 — Lower-Right between "SUSPICIOUSLY" & "SMOOTH" */}
+                            <motion.span
+                                style={{ y: heroBadgeY }}
+                                initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 3.8 }}
+                                transition={{
+                                    delay: 0.58,
+                                    type: 'spring',
+                                    stiffness: 300,
+                                    damping: 20,
+                                }}
+                                whileHover={{ rotate: 0, scale: 1.08 }}
+                                className="absolute right-[8%] bottom-[13%] z-10 cursor-default rounded-full bg-[#0E838F] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-white shadow-[0_12px_26px_-10px_rgba(14,131,143,0.55)] sm:right-[21%] sm:bottom-[15%] sm:px-4.5 sm:py-1.5 sm:text-xs"
+                            >
+                                Zero double-booking
+                            </motion.span>
                         </div>
-                        <div className="flex items-end lg:col-span-7">
-                            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                                Every module shares one relational schema and
-                                policy layer — no brittle webhooks or manual
-                                exports between tools.
+
+                        {/* Flanking Micro-Captions + Centered Subtitle */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 18 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                                duration: 0.65,
+                                delay: 0.34,
+                                ease: smoothEase,
+                            }}
+                            className="mt-7 grid items-center gap-4 text-xs text-[#526577] md:grid-cols-12"
+                        >
+                            <p className="hidden text-left font-medium text-[#0D1219] md:col-span-3 md:block">
+                                We orchestrate volunteering
                             </p>
+                            <p className="mx-auto max-w-md text-sm leading-relaxed text-[#526577] md:col-span-6">
+                                Replace spreadsheets and group chats with one
+                                calm dashboard for every community event.
+                            </p>
+                            <p className="hidden text-right font-medium text-[#0D1219] md:col-span-3 md:block">
+                                No double-booking
+                            </p>
+                        </motion.div>
+
+                        {/* Dual Hero CTAs */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 18 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                                duration: 0.65,
+                                delay: 0.42,
+                                ease: smoothEase,
+                            }}
+                            className="mt-7 flex flex-wrap items-center justify-center gap-3"
+                        >
+                            <motion.div
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.97 }}
+                                transition={springSnappy}
+                            >
+                                <Link
+                                    href="/events"
+                                    className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#0E838F] via-[#1C6EC7] to-[#2F5CE6] py-2 pr-2 pl-6 text-sm font-semibold text-white shadow-[0_14px_30px_-12px_rgba(30,110,199,0.55)]"
+                                >
+                                    <span>Explore open events</span>
+                                    <span className="flex size-8 items-center justify-center rounded-full bg-white text-[#0D1219] transition-transform duration-300 group-hover:rotate-45">
+                                        <ArrowUpRight className="size-4" />
+                                    </span>
+                                </Link>
+                            </motion.div>
+
+                            <motion.div
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.97 }}
+                                transition={springSnappy}
+                            >
+                                <Link
+                                    href={user ? '/dashboard' : '/login'}
+                                    className="inline-flex items-center gap-2 rounded-full border border-[#CBD9E4] bg-white px-6 py-3 text-sm font-semibold text-[#0D1219] shadow-xs transition-colors hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
+                                >
+                                    {user
+                                        ? 'Open my dashboard'
+                                        : 'Sign in to console'}
+                                </Link>
+                            </motion.div>
+                        </motion.div>
+                    </div>
+
+                    {/* Hero 3D Studio Visual Stage */}
+                    <HeroVisualStage
+                        volunteers={stats.volunteers}
+                        events={stats.events}
+                    />
+                </section>
+
+                {/* ASYMMETRIC CURVED MARQUEE RIBBON — BEFORE MANIFESTO */}
+                <CurvedRibbon />
+
+                {/* MANIFESTO — SCROLL-SCRUBBED WORD REVEAL + POP-UP PILLS */}
+                <ManifestoSection />
+
+                {/* SWISS-EDITORIAL ASYMMETRIC STATS SECTION */}
+                <StatsEditorialSection stats={stats} />
+
+                {/* FOUR PILLARS — 2x2 EDITORIAL 3D SHOWCASE GRID */}
+                <section
+                    id="pillars"
+                    className="mx-auto max-w-6xl px-4 pt-16 pb-14 sm:px-6 sm:pt-24 sm:pb-20 lg:px-8"
+                >
+                    <div className="mb-12 text-center sm:mb-16">
+                        <motion.p
+                            initial={{ opacity: 0, y: 12 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.6 }}
+                            transition={{ duration: 0.5, ease: smoothEase }}
+                            className="font-mono text-[11px] font-semibold tracking-[0.22em] text-[#5B6D7E] uppercase"
+                        >
+                            What&apos;s inside
+                        </motion.p>
+                        <div className="relative mt-2 inline-block">
+                            <motion.h2
+                                initial={{ opacity: 0, y: 24 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.6 }}
+                                transition={{
+                                    duration: 0.7,
+                                    ease: smoothEase,
+                                }}
+                                className="font-display text-5xl leading-none tracking-[-0.01em] text-[#1A7D8C] uppercase sm:text-7xl"
+                            >
+                                FOUR PILLARS
+                            </motion.h2>
                         </div>
                     </div>
 
-                    <div className="grid gap-5 md:grid-cols-2">
-                        {focusAreas.map((area, idx) => (
-                            <Reveal key={area.num} delayMs={(idx % 2) * 90}>
-                                <motion.div
-                                    whileHover={{ y: -5 }}
-                                    transition={springCard}
-                                    className="group flex h-full flex-col justify-between rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40 hover:bg-surface/60"
-                                >
-                                    <div>
-                                        <div className="flex items-center justify-between font-mono text-xs">
-                                            <span className="font-semibold text-primary">
-                                                {area.num}
-                                            </span>
-                                            <span className="text-muted-foreground">
-                                                {area.category}
-                                            </span>
-                                        </div>
-                                        <h3 className="mt-4 text-2xl font-bold tracking-tight">
-                                            {area.title}
-                                        </h3>
-                                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                            {area.description}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {area.tags.map((tag) => (
-                                                <span
-                                                    key={tag}
-                                                    className="rounded-full bg-surface px-2.5 py-1 font-mono text-[11px] text-muted-foreground ring-1 ring-border"
-                                                >
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                        <Link
-                                            href={area.href}
-                                            className="inline-flex items-center gap-1 text-xs font-semibold text-foreground transition-colors group-hover:text-primary"
-                                        >
-                                            <span>{area.cta}</span>
-                                            <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                                        </Link>
-                                    </div>
-                                </motion.div>
-                            </Reveal>
+                    <div className="grid gap-6 md:grid-cols-2 lg:gap-8">
+                        {pillars.map((pillar, idx) => (
+                            <PillarCard
+                                key={pillar.num}
+                                pillar={pillar}
+                                index={idx}
+                            />
                         ))}
                     </div>
                 </section>
 
-                {/* -- 03 / Active Community Events (Live from DB) */}
-                {featuredEvents.length > 0 && (
-                    <section
-                        id="events"
-                        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
-                    >
+                {/* LIVE ACTIVE COMMUNITY EVENTS (FROM DB) */}
+                {/* {featuredEvents.length > 0 && (
+                    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
                         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                             <div>
-                                <p className="font-mono text-xs text-primary">
-                                    -- 03 / Active initiatives
+                                <p className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[#1A7D8C] uppercase">
+                                    Live right now
                                 </p>
-                                <h2 className="mt-2 text-3xl font-bold tracking-tight">
-                                    Open for volunteer applications.
+                                <h2 className="mt-1 font-display text-4xl tracking-[-0.01em] text-[#0D1219] uppercase sm:text-5xl">
+                                    OPEN COMMUNITY EVENTS
                                 </h2>
                             </div>
                             <Link
                                 href="/events"
-                                className="group inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-surface dark:bg-card"
+                                className="group inline-flex items-center gap-2 rounded-full border border-[#CBD9E4] bg-white px-5 py-2.5 text-xs font-semibold text-[#0D1219] transition-all hover:border-[#1A7D8C]/50 hover:text-[#1A7D8C]"
                             >
                                 <span>Explore all events</span>
-                                <ArrowUpRight className="size-3.5 transition-transform group-hover:rotate-45" />
+                                <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:rotate-45" />
                             </Link>
                         </div>
 
-                        <div className="divide-y divide-border border-y border-border">
+                        <div className="space-y-3">
                             {featuredEvents.map((ev, idx) => (
-                                <Reveal key={ev.id} delayMs={idx * 70}>
+                                <motion.div
+                                    key={ev.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, amount: 0.3 }}
+                                    transition={{
+                                        duration: 0.55,
+                                        delay: idx * 0.07,
+                                        ease: smoothEase,
+                                    }}
+                                >
                                     <Link
                                         href="/events"
-                                        className="group flex flex-col justify-between gap-4 py-6 transition-colors hover:bg-surface/60 sm:flex-row sm:items-center sm:px-4"
+                                        className="group flex flex-col justify-between gap-4 rounded-2xl border border-[#DCE7EF] bg-white px-5 py-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#1A7D8C]/40 hover:shadow-[0_18px_36px_-22px_rgba(14,131,143,0.28)] sm:flex-row sm:items-center sm:px-6"
                                     >
-                                        <div className="flex items-start gap-5">
-                                            <span className="font-mono text-xs text-muted-foreground">
+                                        <div className="flex items-start gap-4 sm:items-center">
+                                            <span className="font-display text-2xl text-[#7BC0C9] transition-colors group-hover:text-[#1A7D8C]">
                                                 0{idx + 1}
                                             </span>
                                             <div>
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <h3 className="text-lg font-bold tracking-tight group-hover:text-primary">
+                                                <div className="flex flex-wrap items-center gap-2.5">
+                                                    <h3 className="text-base font-bold text-[#0D1219] transition-colors group-hover:text-[#1A7D8C] sm:text-lg">
                                                         {ev.title}
                                                     </h3>
-                                                    <span className="rounded-full bg-soft px-2 py-0.5 font-mono text-[10px] font-semibold text-soft-foreground uppercase">
+                                                    <span className="rounded-full bg-[#E6F5F7] px-2.5 py-0.5 font-mono text-[10px] font-semibold text-[#0E838F] uppercase">
                                                         {ev.status}
                                                     </span>
                                                 </div>
-                                                <div className="mt-1 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                                                    <span className="flex items-center gap-1">
-                                                        <MapPin className="size-3.5 text-primary" />
+                                                <div className="mt-1.5 flex flex-wrap gap-4 text-xs text-[#526577]">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <MapPin className="size-3.5 text-[#1A7D8C]" />
                                                         {ev.venue_name}
                                                     </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <CalendarDays className="size-3.5 text-primary" />
+                                                    <span className="flex items-center gap-1.5">
+                                                        <CalendarDays className="size-3.5 text-[#2F5CE6]" />
                                                         {new Date(
                                                             ev.start_date,
                                                         ).toLocaleDateString(
@@ -964,314 +1385,284 @@ export default function Welcome({
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-4 pl-9 sm:pl-0">
-                                            <span className="font-mono text-xs text-muted-foreground">
+                                        <div className="flex items-center justify-between gap-4 pl-9 sm:justify-end sm:pl-0">
+                                            <span className="font-mono text-xs text-[#5B6D7E]">
                                                 {ev.divisions_count} divisions ·{' '}
                                                 {ev.shifts_count} shifts
                                             </span>
-                                            <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+                                            <span className="flex size-8 items-center justify-center rounded-full bg-[#F4F8FA] text-[#0D1219] transition-all duration-300 group-hover:rotate-45 group-hover:bg-[#0D1219] group-hover:text-white">
+                                                <ArrowUpRight className="size-4" />
+                                            </span>
                                         </div>
                                     </Link>
-                                </Reveal>
+                                </motion.div>
                             ))}
                         </div>
                     </section>
-                )}
+                )} */}
 
-                {/* -- 04 / Four Stages, One Platform */}
+                {/* THE VOLUNTEER JOURNEY — 4 INTERACTIVE STAGE CARDS */}
                 <section
-                    id="workflow"
-                    className="bg-vs-grid border-y border-border/70 py-16"
+                    id="journey"
+                    className="mx-auto max-w-6xl px-4 pt-16 pb-16 sm:px-6 sm:pt-24 sm:pb-24 lg:px-8"
                 >
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-                            <div>
-                                <p className="font-mono text-xs text-primary">
-                                    -- 04 / Four stages, one platform
-                                </p>
-                                <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-                                    Scroll to unfold the volunteer journey.
-                                </h2>
-                            </div>
-                            <span className="font-mono text-xs text-muted-foreground">
-                                [ End-to-end lifecycle ]
-                            </span>
-                        </div>
-
-                        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                            {workflowStages.map((stage, idx) => (
-                                <Reveal key={stage.step} delayMs={idx * 80}>
-                                    <motion.div
-                                        whileHover={{ y: -5 }}
-                                        transition={springCard}
-                                        className="flex h-full flex-col rounded-2xl border border-border bg-white p-5 shadow-xs dark:bg-card"
-                                    >
-                                        <div className="flex items-baseline justify-between border-b border-border pb-3">
-                                            <span className="font-mono text-xs font-semibold text-primary">
-                                                {stage.step}
-                                            </span>
-                                            <span className="text-sm font-bold">
-                                                {stage.phase}
-                                            </span>
-                                        </div>
-                                        <div className="mt-4 space-y-3.5">
-                                            {stage.items.map((it) => (
-                                                <div
-                                                    key={it.title}
-                                                    className="space-y-1 border-b border-dashed border-border/80 pb-3 last:border-0 last:pb-0"
-                                                >
-                                                    <p className="text-xs leading-snug font-medium text-foreground">
-                                                        {it.title}
-                                                    </p>
-                                                    <p className="font-mono text-[10px] text-muted-foreground uppercase">
-                                                        {it.meta}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                </Reveal>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* -- 05 / Role Access Passes */}
-                <section
-                    id="passes"
-                    className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
-                >
-                    <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-                        <div>
-                            <p className="font-mono text-xs text-primary">
-                                -- 05 / Role access passes
-                            </p>
-                            <h2 className="mt-2 text-3xl font-bold tracking-tight">
-                                Test every role instantly.
-                            </h2>
-                        </div>
-                        <span className="rounded-full border border-border bg-surface px-3 py-1 font-mono text-xs text-muted-foreground">
-                            Demo password:{' '}
-                            <strong className="text-foreground">
-                                password
-                            </strong>
-                        </span>
+                    <div className="mb-12 text-center sm:mb-14">
+                        <motion.p
+                            initial={{ opacity: 0, y: 12 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.6 }}
+                            transition={{ duration: 0.5, ease: smoothEase }}
+                            className="font-mono text-[11px] font-semibold tracking-[0.22em] text-[#5B6D7E] uppercase"
+                        >
+                            Four stages, one platform
+                        </motion.p>
+                        <motion.h2
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.6 }}
+                            transition={{ duration: 0.7, ease: smoothEase }}
+                            className="mt-2 font-display text-5xl leading-none tracking-[-0.01em] text-[#0D1219] uppercase sm:text-7xl"
+                        >
+                            THE VOLUNTEER JOURNEY
+                        </motion.h2>
                     </div>
 
-                    <div className="grid gap-5 lg:grid-cols-3">
-                        {rolePasses.map((pass, idx) => (
-                            <Reveal key={pass.code} delayMs={idx * 80}>
-                                <motion.div
-                                    whileHover={{ y: -5 }}
-                                    transition={springCard}
-                                    className="flex h-full flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-xs transition-colors hover:border-primary/40"
-                                >
-                                    <div>
-                                        <div className="flex items-center justify-between border-b border-dashed border-border pb-3 font-mono text-xs">
-                                            <span className="font-semibold text-primary">
-                                                {pass.code}
-                                            </span>
-                                            <span className="text-muted-foreground">
-                                                RBAC ISOLATED
-                                            </span>
-                                        </div>
-
-                                        <h3 className="mt-4 text-xl font-bold">
-                                            {pass.role}
-                                        </h3>
-                                        <p className="mt-1 text-xs text-muted-foreground">
-                                            {pass.tagline}
-                                        </p>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                copyEmail(pass.email)
-                                            }
-                                            className="mt-4 flex w-full items-center justify-between rounded-lg bg-surface px-3 py-2 font-mono text-xs text-foreground ring-1 ring-border transition-colors hover:ring-primary/50"
-                                        >
-                                            <span>{pass.email}</span>
-                                            {copiedEmail === pass.email ? (
-                                                <Check className="size-3.5 text-primary" />
-                                            ) : (
-                                                <Copy className="size-3.5 text-muted-foreground" />
-                                            )}
-                                        </button>
-
-                                        <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
-                                            {pass.perks.map((perk) => (
-                                                <li
-                                                    key={perk}
-                                                    className="flex items-start gap-2"
-                                                >
-                                                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" />
-                                                    <span>{perk}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    <div className="mt-6 pt-3">
-                                        <Link
-                                            href="/login"
-                                            className="group inline-flex w-full items-center justify-between rounded-full border border-border bg-surface py-1.5 pr-1.5 pl-4 text-xs font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-white dark:hover:bg-card"
-                                        >
-                                            <span>Sign in as {pass.role}</span>
-                                            <span className="flex size-7 items-center justify-center rounded-full bg-[#0e0f12] text-white transition-transform duration-300 group-hover:rotate-45 dark:bg-white dark:text-[#0e0f12]">
-                                                <ArrowUpRight className="size-3.5" />
-                                            </span>
-                                        </Link>
-                                    </div>
-                                </motion.div>
-                            </Reveal>
-                        ))}
-                    </div>
-                </section>
-
-                {/* -- 06 / Motion AnimatePresence Accordion FAQ */}
-                <section
-                    id="faq"
-                    className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8"
-                >
-                    <div className="mb-8 text-center">
-                        <p className="font-mono text-xs text-primary">
-                            -- 06 / Questions & answers
-                        </p>
-                        <h2 className="mt-2 text-3xl font-bold tracking-tight">
-                            Everything you need to know.
-                        </h2>
-                    </div>
-
-                    <div className="divide-y divide-border border-y border-border">
-                        {faqs.map((item, idx) => {
-                            const isOpen = openFaq === idx;
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {journeyStages.map((stage, idx) => {
+                            const isActive = activeStage === idx;
                             return (
-                                <div key={item.q} className="py-4">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setOpenFaq(isOpen ? null : idx)
-                                        }
-                                        className="flex w-full items-center justify-between gap-4 text-left"
+                                <motion.button
+                                    key={stage.num}
+                                    type="button"
+                                    onMouseEnter={() => setActiveStage(idx)}
+                                    onClick={() => setActiveStage(idx)}
+                                    initial={{ opacity: 0, y: 28 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, amount: 0.25 }}
+                                    transition={{
+                                        duration: 0.6,
+                                        delay: idx * 0.08,
+                                        ease: smoothEase,
+                                    }}
+                                    className="relative flex min-h-[225px] flex-col justify-between overflow-hidden rounded-[1.75rem] border border-[#DCE7EF] bg-white p-6 text-left shadow-[0_10px_28px_-20px_rgba(13,18,25,0.16)] transition-colors"
+                                >
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="journeyActiveCard"
+                                            transition={{
+                                                type: 'spring',
+                                                stiffness: 310,
+                                                damping: 30,
+                                            }}
+                                            className="absolute inset-0 bg-gradient-to-br from-[#0E838F] via-[#1C6EC7] to-[#2F5CE6]"
+                                        />
+                                    )}
+
+                                    <span
+                                        className={`relative z-10 font-display text-5xl leading-none transition-colors duration-300 ${
+                                            isActive
+                                                ? 'text-white'
+                                                : 'text-[#1A7D8C]'
+                                        }`}
                                     >
-                                        <span className="text-sm font-semibold text-foreground sm:text-base">
-                                            {item.q}
-                                        </span>
-                                        <span
-                                            className={`flex size-7 shrink-0 items-center justify-center rounded-full border border-border transition-transform duration-300 ${isOpen ? 'rotate-45 bg-primary text-white' : 'bg-surface text-foreground'}`}
+                                        {stage.num}
+                                    </span>
+
+                                    <div className="relative z-10 mt-8">
+                                        <h3
+                                            className={`text-lg font-bold tracking-tight transition-colors duration-300 ${
+                                                isActive
+                                                    ? 'text-white'
+                                                    : 'text-[#0D1219]'
+                                            }`}
                                         >
-                                            <Plus className="size-3.5" />
-                                        </span>
-                                    </button>
-                                    <AnimatePresence initial={false}>
-                                        {isOpen && (
-                                            <motion.div
-                                                initial={{
-                                                    height: 0,
-                                                    opacity: 0,
-                                                }}
-                                                animate={{
-                                                    height: 'auto',
-                                                    opacity: 1,
-                                                }}
-                                                exit={{
-                                                    height: 0,
-                                                    opacity: 0,
-                                                }}
-                                                transition={{
-                                                    duration: 0.28,
-                                                    ease: [0.16, 1, 0.3, 1],
-                                                }}
-                                                className="overflow-hidden"
-                                            >
-                                                <p className="pt-3 pr-10 text-sm leading-relaxed text-muted-foreground">
-                                                    {item.a}
-                                                </p>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
+                                            {stage.title}
+                                        </h3>
+                                        <p
+                                            className={`mt-2 text-xs leading-relaxed transition-colors duration-300 sm:text-[13px] ${
+                                                isActive
+                                                    ? 'text-white/85'
+                                                    : 'text-[#526577]'
+                                            }`}
+                                        >
+                                            {stage.description}
+                                        </p>
+                                    </div>
+                                </motion.button>
                             );
                         })}
                     </div>
+
+                    {/* Compact Role Demo Switcher Strip */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.3 }}
+                        transition={{ duration: 0.65, ease: smoothEase }}
+                        className="mt-10 rounded-3xl border border-[#DCE7EF] bg-white/85 p-4 backdrop-blur-sm sm:p-5"
+                    >
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-3">
+                            <span className="font-mono text-[11px] font-semibold tracking-[0.16em] text-[#1A7D8C] uppercase">
+                                Instant Demo Access · Click email to copy
+                            </span>
+                            <span className="font-mono text-[11px] text-[#5B6D7E]">
+                                Password:{' '}
+                                <strong className="text-[#0D1219]">
+                                    password
+                                </strong>
+                            </span>
+                        </div>
+                        <div className="grid gap-2.5 sm:grid-cols-3">
+                            {demoRoles.map((item) => (
+                                <button
+                                    key={item.email}
+                                    type="button"
+                                    onClick={() => copyEmail(item.email)}
+                                    className="group flex items-center justify-between gap-3 rounded-2xl border border-[#DCE7EF] bg-[#F6FAFC] px-4 py-3 text-left transition-all hover:border-[#1A7D8C]/40 hover:bg-white"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-[#0D1219]">
+                                            {item.role}
+                                        </p>
+                                        <p className="truncate font-mono text-[11px] text-[#5B6D7E]">
+                                            {item.email}
+                                        </p>
+                                    </div>
+                                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-[#526577] ring-1 ring-[#DCE7EF] transition-colors group-hover:text-[#1A7D8C]">
+                                        {copiedEmail === item.email ? (
+                                            <Check className="size-3.5 text-[#0E838F]" />
+                                        ) : (
+                                            <Copy className="size-3.5" />
+                                        )}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </motion.div>
                 </section>
 
-                {/* Dark Contrast Editorial Footer */}
-                <footer className="mt-14 bg-[#0e0f12] text-white">
-                    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-                        <div className="flex flex-col justify-between gap-8 border-b border-white/10 pb-10 lg:flex-row lg:items-end">
-                            <div>
-                                <p className="font-mono text-xs text-[#34d399]">
-                                    [ READY TO COORDINATE? ]
-                                </p>
-                                <h2 className="mt-3 max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">
-                                    Run your next community event without the
-                                    chaos.
+                {/* GIANT DARK ROUNDED-TOP EDITORIAL FOOTER */}
+                <motion.footer
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.8, ease: smoothEase }}
+                    className="relative overflow-hidden rounded-t-[2.5rem] bg-[#0D1219] text-white sm:rounded-t-[3.5rem]"
+                >
+                    {/* Subtle Ambient Brand Glow */}
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -top-28 right-10 size-96 rounded-full bg-gradient-to-br from-[#0E838F]/20 via-[#1C6EC7]/15 to-transparent blur-3xl"
+                    />
+
+                    <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-10 sm:px-8 sm:pt-24 sm:pb-12">
+                        <div className="grid items-end gap-12 lg:grid-cols-12">
+                            {/* Left Giant Condensed Statement */}
+                            <div className="lg:col-span-7">
+                                <h2 className="font-display text-[clamp(3.2rem,9.5vw,6.8rem)] leading-[0.88] tracking-[-0.015em] uppercase">
+                                    <span className="block text-white">
+                                        WANT TO
+                                    </span>
+                                    <span className="block text-white">
+                                        RUN A
+                                    </span>
+                                    <span className="block text-[#7BC0C9]">
+                                        CALMER
+                                    </span>
+                                    <span className="block text-[#7BC0C9]">
+                                        EVENT?
+                                    </span>
                                 </h2>
                             </div>
-                            <motion.div
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.98 }}
-                                transition={springCard}
-                            >
-                                <Link
-                                    href={user ? '/dashboard' : '/register'}
-                                    className="group inline-flex w-fit items-center gap-3 rounded-full bg-white py-2 pr-2 pl-6 text-sm font-semibold text-[#0e0f12]"
+
+                            {/* Right Contact & Pill CTA */}
+                            <div className="space-y-6 lg:col-span-5 lg:pb-3">
+                                <p className="text-lg font-medium text-white/85">
+                                    or just say hello!
+                                </p>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <p className="font-mono text-[10px] tracking-[0.18em] text-white/45 uppercase">
+                                            Organizers &amp; Partnerships
+                                        </p>
+                                        <a
+                                            href="mailto:hello@volunsync.app"
+                                            className="mt-1 inline-block text-base font-semibold text-white transition-colors hover:text-[#7BC0C9]"
+                                        >
+                                            hello@volunsync.app
+                                        </a>
+                                    </div>
+
+                                    <div>
+                                        <p className="font-mono text-[10px] tracking-[0.18em] text-white/45 uppercase">
+                                            Volunteer Support
+                                        </p>
+                                        <a
+                                            href="mailto:support@volunsync.app"
+                                            className="mt-1 inline-block text-base font-semibold text-white transition-colors hover:text-[#7BC0C9]"
+                                        >
+                                            support@volunsync.app
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <motion.div
+                                    whileHover={{ scale: 1.04, y: -2 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    transition={springSnappy}
+                                    className="inline-block pt-2"
                                 >
-                                    <span>
-                                        {user
-                                            ? 'Open my console'
-                                            : 'Create volunteer account'}
-                                    </span>
-                                    <span className="flex size-8 items-center justify-center rounded-full bg-gradient-to-tr from-[#008c8d] to-[#2563eb] text-white transition-transform duration-300 group-hover:rotate-45">
-                                        <ArrowUpRight className="size-4" />
-                                    </span>
-                                </Link>
-                            </motion.div>
+                                    <Link
+                                        href={user ? '/dashboard' : '/register'}
+                                        className="group inline-flex items-center gap-3 rounded-full bg-white py-2 pr-2 pl-6 text-sm font-semibold text-[#0D1219] shadow-[0_14px_34px_-12px_rgba(255,255,255,0.28)]"
+                                    >
+                                        <span>
+                                            {user
+                                                ? 'Open my console'
+                                                : 'Create volunteer account'}
+                                        </span>
+                                        <span className="flex size-8 items-center justify-center rounded-full bg-gradient-to-tr from-[#0E838F] to-[#2F5CE6] text-white transition-transform duration-300 group-hover:rotate-45">
+                                            <ArrowUpRight className="size-4" />
+                                        </span>
+                                    </Link>
+                                </motion.div>
+                            </div>
                         </div>
 
-                        <div className="mt-8 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-lg bg-white p-1">
-                                    <img
-                                        src="/images/volunsync-mark.jpg"
-                                        alt="VolunSync"
-                                        className="size-6 object-contain"
-                                    />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold">
-                                        VolunSync
-                                    </p>
-                                    <p className="text-xs text-white/55">
-                                        Community Volunteer Management Platform
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-5 font-mono text-xs text-white/60">
+                        {/* Bottom Bar */}
+                        <div className="mt-16 flex flex-col justify-between gap-4 border-t border-white/10 pt-8 text-xs text-white/50 sm:flex-row sm:items-center">
+                            <span className="text-sm font-bold tracking-tight text-white">
+                                VolunSync
+                            </span>
+
+                            <div className="flex flex-wrap items-center gap-6 font-mono text-[11px]">
                                 <Link
                                     href="/events"
-                                    className="hover:text-white"
+                                    className="transition-colors hover:text-white"
                                 >
                                     Events
                                 </Link>
                                 <Link
                                     href="/login"
-                                    className="hover:text-white"
+                                    className="transition-colors hover:text-white"
                                 >
                                     Sign in
                                 </Link>
                                 <Link
                                     href="/register"
-                                    className="hover:text-white"
+                                    className="transition-colors hover:text-white"
                                 >
                                     Register
                                 </Link>
-                                <span>· © 2026 VolunSync</span>
+                                <span className="text-white/35">
+                                    Community Volunteer Management Platform · ©
+                                    2026 VolunSync
+                                </span>
                             </div>
                         </div>
                     </div>
-                </footer>
+                </motion.footer>
             </div>
         </MotionConfig>
     );
