@@ -19,6 +19,7 @@ import {
     type MotionValue,
 } from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { SplashScreen } from '@/components/splash-screen';
 import type { Auth } from '@/types';
 
 type FeaturedEvent = {
@@ -815,9 +816,11 @@ function StatsEditorialSection({
 function HeroVisualStage({
     volunteers,
     events,
+    ready = true,
 }: {
     volunteers: number;
     events: number;
+    ready?: boolean;
 }) {
     'use no memo';
     const stageRef = useRef<HTMLDivElement | null>(null);
@@ -840,9 +843,13 @@ function HeroVisualStage({
             className="relative mx-auto mt-10 max-w-5xl px-4 sm:mt-14 sm:px-6"
         >
             <motion.div
-                initial={{ opacity: 0, y: 36, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.85, delay: 0.32, ease: smoothEase }}
+                initial={{ opacity: 0, y: 44, scale: 0.96 }}
+                animate={
+                    ready
+                        ? { opacity: 1, y: 0, scale: 1 }
+                        : { opacity: 0, y: 44, scale: 0.96 }
+                }
+                transition={{ duration: 0.9, delay: 0.54, ease: smoothEase }}
                 className="relative overflow-hidden rounded-[2rem] border border-[#DCE7EF] bg-[#EDF4F8] shadow-[0_28px_70px_-30px_rgba(14,131,143,0.22)] sm:rounded-[2.75rem]"
             >
                 <motion.div
@@ -960,6 +967,7 @@ export default function Welcome({
     const [activeStage, setActiveStage] = useState(3);
     const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
     const [scrolled, setScrolled] = useState(false);
+    const [heroReady, setHeroReady] = useState(false);
 
     const heroRef = useRef<HTMLElement | null>(null);
     const { scrollYProgress: heroScroll } = useScroll({
@@ -972,7 +980,6 @@ export default function Welcome({
     });
     const heroBadgeY = useTransform(smoothHeroScroll, [0, 1], [0, -34]);
     const heroSmoothWordX = useTransform(smoothHeroScroll, [0, 1], [0, 26]);
-    const loopRotate = useTransform(smoothHeroScroll, [0, 1], [0, 28]);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 24);
@@ -990,12 +997,23 @@ export default function Welcome({
     return (
         <MotionConfig reducedMotion="user">
             <Head title="VolunSync — Community Event & Volunteer Platform" />
+            <SplashScreen
+                onRevealStart={() => setHeroReady(true)}
+                onComplete={() => setHeroReady(true)}
+            />
             <ScrollProgressBar />
 
             <div className="min-h-screen overflow-x-clip bg-[#F4F8FA] text-[#104B56] selection:bg-[#1A7D8C]/20 selection:text-[#104B56]">
                 {/* Minimal Editorial Floating Navbar (two26.studio rhythm) */}
-                <header
-                    className={`fixed top-0 right-0 left-0 z-40 transition-all duration-300 ${
+                <motion.header
+                    initial={{ opacity: 0, y: -14 }}
+                    animate={
+                        heroReady
+                            ? { opacity: 1, y: 0 }
+                            : { opacity: 0, y: -14 }
+                    }
+                    transition={{ duration: 0.65, delay: 0.14, ease: smoothEase }}
+                    className={`fixed top-0 right-0 left-0 z-40 transition-colors duration-300 ${
                         scrolled
                             ? 'border-b border-[#DCE7EF]/90 bg-[#F4F8FA]/85 py-3 shadow-[0_8px_30px_-18px_rgba(16,75,86,0.12)] backdrop-blur-xl'
                             : 'bg-transparent py-5'
@@ -1061,70 +1079,28 @@ export default function Welcome({
                             </motion.div>
                         </div>
                     </div>
-                </header>
+                </motion.header>
 
                 {/* HERO SECTION */}
                 <section
                     ref={heroRef}
                     className="relative pt-28 pb-6 sm:pt-36 sm:pb-10"
                 >
-                    {/* Signature two26.studio Scroll-Drawn SVG Stroke Accent (Left Edge) */}
-                    <motion.svg
-                        style={{ rotate: loopRotate }}
-                        viewBox="0 0 180 180"
-                        fill="none"
-                        aria-hidden="true"
-                        className="pointer-events-none absolute top-[26rem] -left-16 hidden size-44 text-[#1A7D8C]/55 lg:block"
-                    >
-                        <motion.path
-                            d="M 24 90 C 24 44, 62 18, 102 28 C 142 38, 162 84, 146 122 C 130 160, 76 168, 44 140 C 16 116, 18 68, 56 46"
-                            stroke="currentColor"
-                            strokeWidth="2.4"
-                            strokeLinecap="round"
-                            initial={{ pathLength: 0, opacity: 0 }}
-                            animate={{ pathLength: 1, opacity: 1 }}
-                            transition={{
-                                duration: 1.6,
-                                delay: 0.4,
-                                ease: smoothEase,
-                            }}
-                        />
-                    </motion.svg>
-
-                    {/* Subtle Right Accent Stroke */}
-                    <svg
-                        viewBox="0 0 160 120"
-                        fill="none"
-                        aria-hidden="true"
-                        className="pointer-events-none absolute top-44 -right-8 hidden w-36 text-[#2F5CE6]/30 xl:block"
-                    >
-                        <motion.path
-                            d="M 10 95 C 48 18, 108 14, 150 64"
-                            stroke="currentColor"
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeDasharray="6 8"
-                            initial={{ pathLength: 0, opacity: 0 }}
-                            animate={{ pathLength: 1, opacity: 1 }}
-                            transition={{
-                                duration: 1.5,
-                                delay: 0.65,
-                                ease: smoothEase,
-                            }}
-                        />
-                    </svg>
-
                     <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
                         {/* Giant Condensed Stacked Headline with 3 Overlaid Mini Info Pills */}
                         <div className="relative mt-2 inline-block w-full select-none">
                             <h1 className="font-display text-[clamp(3.35rem,11.2vw,8.6rem)] leading-[0.88] tracking-[-0.015em] uppercase">
                                 <span className="block overflow-hidden">
                                     <motion.span
-                                        initial={{ y: '105%' }}
-                                        animate={{ y: '0%' }}
+                                        initial={{ y: '108%' }}
+                                        animate={
+                                            heroReady
+                                                ? { y: '0%' }
+                                                : { y: '108%' }
+                                        }
                                         transition={{
-                                            duration: 0.78,
-                                            delay: 0.08,
+                                            duration: 0.82,
+                                            delay: 0.16,
                                             ease: smoothEase,
                                         }}
                                         className="block text-[#1A7D8C]"
@@ -1135,11 +1111,15 @@ export default function Welcome({
 
                                 <span className="relative block overflow-hidden">
                                     <motion.span
-                                        initial={{ y: '105%' }}
-                                        animate={{ y: '0%' }}
+                                        initial={{ y: '108%' }}
+                                        animate={
+                                            heroReady
+                                                ? { y: '0%' }
+                                                : { y: '108%' }
+                                        }
                                         transition={{
-                                            duration: 0.78,
-                                            delay: 0.16,
+                                            duration: 0.82,
+                                            delay: 0.26,
                                             ease: smoothEase,
                                         }}
                                         className="block text-[#1A7D8C]"
@@ -1151,11 +1131,15 @@ export default function Welcome({
                                 <span className="block overflow-hidden">
                                     <motion.span
                                         style={{ x: heroSmoothWordX }}
-                                        initial={{ y: '105%' }}
-                                        animate={{ y: '0%' }}
+                                        initial={{ y: '108%' }}
+                                        animate={
+                                            heroReady
+                                                ? { y: '0%' }
+                                                : { y: '108%' }
+                                        }
                                         transition={{
-                                            duration: 0.78,
-                                            delay: 0.24,
+                                            duration: 0.82,
+                                            delay: 0.36,
                                             ease: smoothEase,
                                         }}
                                         className="block text-[#7BC0C9]"
@@ -1168,12 +1152,24 @@ export default function Welcome({
                             {/* Mini Info Pill 1 — Top-Right over DARK "EVENTS THAT RUN" → Light Teal Pill */}
                             <motion.span
                                 style={{ y: heroBadgeY }}
-                                initial={{ opacity: 0, scale: 0.7, rotate: -9 }}
-                                animate={{ opacity: 1, scale: 1, rotate: -3.2 }}
+                                initial={{ opacity: 0, scale: 0.72, rotate: -9 }}
+                                animate={
+                                    heroReady
+                                        ? {
+                                              opacity: 1,
+                                              scale: 1,
+                                              rotate: -3.2,
+                                          }
+                                        : {
+                                              opacity: 0,
+                                              scale: 0.72,
+                                              rotate: -9,
+                                          }
+                                }
                                 transition={{
-                                    delay: 0.38,
+                                    delay: 0.52,
                                     type: 'spring',
-                                    stiffness: 300,
+                                    stiffness: 280,
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
@@ -1185,12 +1181,24 @@ export default function Welcome({
                             {/* Mini Info Pill 2 — Mid-Left over DARK "EVENTS THAT RUN" & "SUSPICIOUSLY" → Light Teal Pill */}
                             <motion.span
                                 style={{ y: heroBadgeY }}
-                                initial={{ opacity: 0, scale: 0.7, rotate: 8 }}
-                                animate={{ opacity: 1, scale: 1, rotate: -4.5 }}
+                                initial={{ opacity: 0, scale: 0.72, rotate: 8 }}
+                                animate={
+                                    heroReady
+                                        ? {
+                                              opacity: 1,
+                                              scale: 1,
+                                              rotate: -4.5,
+                                          }
+                                        : {
+                                              opacity: 0,
+                                              scale: 0.72,
+                                              rotate: 8,
+                                          }
+                                }
                                 transition={{
-                                    delay: 0.48,
+                                    delay: 0.62,
                                     type: 'spring',
-                                    stiffness: 300,
+                                    stiffness: 280,
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
@@ -1202,12 +1210,24 @@ export default function Welcome({
                             {/* Mini Info Pill 3 — Lower-Right over LIGHT "SMOOTH" → Dark Teal Pill */}
                             <motion.span
                                 style={{ y: heroBadgeY }}
-                                initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
-                                animate={{ opacity: 1, scale: 1, rotate: 3.8 }}
+                                initial={{ opacity: 0, scale: 0.72, rotate: -8 }}
+                                animate={
+                                    heroReady
+                                        ? {
+                                              opacity: 1,
+                                              scale: 1,
+                                              rotate: 3.8,
+                                          }
+                                        : {
+                                              opacity: 0,
+                                              scale: 0.72,
+                                              rotate: -8,
+                                          }
+                                }
                                 transition={{
-                                    delay: 0.58,
+                                    delay: 0.72,
                                     type: 'spring',
-                                    stiffness: 300,
+                                    stiffness: 280,
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
@@ -1219,11 +1239,15 @@ export default function Welcome({
 
                         {/* Flanking Micro-Captions + Centered Subtitle */}
                         <motion.div
-                            initial={{ opacity: 0, y: 18 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={
+                                heroReady
+                                    ? { opacity: 1, y: 0 }
+                                    : { opacity: 0, y: 20 }
+                            }
                             transition={{
-                                duration: 0.65,
-                                delay: 0.34,
+                                duration: 0.72,
+                                delay: 0.44,
                                 ease: smoothEase,
                             }}
                             className="mt-7 grid items-center gap-4 text-xs text-[#4C6E79] md:grid-cols-12"
@@ -1242,11 +1266,15 @@ export default function Welcome({
 
                         {/* Dual Hero CTAs */}
                         <motion.div
-                            initial={{ opacity: 0, y: 18 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={
+                                heroReady
+                                    ? { opacity: 1, y: 0 }
+                                    : { opacity: 0, y: 20 }
+                            }
                             transition={{
-                                duration: 0.65,
-                                delay: 0.42,
+                                duration: 0.72,
+                                delay: 0.52,
                                 ease: smoothEase,
                             }}
                             className="mt-7 flex flex-wrap items-center justify-center gap-3"
@@ -1288,6 +1316,7 @@ export default function Welcome({
                     <HeroVisualStage
                         volunteers={stats.volunteers}
                         events={stats.events}
+                        ready={heroReady}
                     />
                 </section>
 
