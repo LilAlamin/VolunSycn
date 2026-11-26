@@ -47,29 +47,33 @@ const manifestoText =
 
 const manifestoPills = [
     {
+        // Over dark teal text → light teal pill
         label: 'Conflict-free shifts',
-        bg: 'bg-[#0D1219] text-white',
+        bg: 'border border-[#8FD3DC] bg-[#CDEEF2] text-[#0E4D59]',
         rotate: -4.5,
         position: 'top-[13%] right-[4%] sm:top-[14%] sm:right-[11%]',
         appearAt: 0.2,
     },
     {
+        // Over dark/medium-dark teal text → light teal pill
         label: 'QR + GPS check-in',
-        bg: 'bg-[#2F5CE6] text-white',
+        bg: 'border border-[#8FD3DC] bg-[#CDEEF2] text-[#0E4D59]',
         rotate: 4,
         position: 'top-[46%] left-[2%] sm:top-[45%] sm:left-[4%]',
         appearAt: 0.44,
     },
     {
+        // Over light teal text → dark teal pill
         label: 'Role-based access',
-        bg: 'bg-[#0E838F] text-white',
+        bg: 'bg-[#0F4D59] text-white',
         rotate: -3.5,
         position: 'top-[62%] right-[2%] sm:top-[58%] sm:right-[6%]',
         appearAt: 0.66,
     },
     {
+        // Over light teal text → dark teal pill
         label: 'Live notifications',
-        bg: 'bg-gradient-to-r from-[#0E838F] to-[#2F5CE6] text-white',
+        bg: 'bg-[#0F4D59] text-white',
         rotate: 3.2,
         position: 'bottom-[4%] left-[10%] sm:bottom-[6%] sm:left-[18%]',
         appearAt: 0.82,
@@ -401,16 +405,40 @@ function CurvedRibbon({ reverse = false }: { reverse?: boolean }) {
     );
 }
 
+const manifestoGradientStops: Array<{ at: number; rgb: [number, number, number] }> =
+    [
+        { at: 0, rgb: [14, 77, 89] }, // #0E4D59 — deep ocean teal
+        { at: 0.35, rgb: [23, 115, 130] }, // #177382 — rich primary teal
+        { at: 0.7, rgb: [55, 154, 168] }, // #379AA8 — bright calm aqua
+        { at: 1, rgb: [123, 192, 201] }, // #7BC0C9 — soft light ice-teal
+    ];
+
+function getManifestoWordColor(t: number): string {
+    const clamped = Math.max(0, Math.min(1, t));
+    for (let i = 0; i < manifestoGradientStops.length - 1; i++) {
+        const a = manifestoGradientStops[i];
+        const b = manifestoGradientStops[i + 1];
+        if (clamped >= a.at && clamped <= b.at) {
+            const local = (clamped - a.at) / (b.at - a.at);
+            const r = Math.round(a.rgb[0] + (b.rgb[0] - a.rgb[0]) * local);
+            const g = Math.round(a.rgb[1] + (b.rgb[1] - a.rgb[1]) * local);
+            const bl = Math.round(a.rgb[2] + (b.rgb[2] - a.rgb[2]) * local);
+            return `rgb(${r}, ${g}, ${bl})`;
+        }
+    }
+    return 'rgb(123, 192, 201)';
+}
+
 function WordRevealItem({
     word,
     progress,
     range,
-    highlight = false,
+    color,
 }: {
     word: string;
     progress: MotionValue<number>;
     range: [number, number];
-    highlight?: boolean;
+    color: string;
 }) {
     'use no memo';
     const opacity = useTransform(progress, range, [0.16, 1]);
@@ -418,10 +446,8 @@ function WordRevealItem({
 
     return (
         <motion.span
-            style={{ opacity, y }}
-            className={`mr-[0.23em] inline-block will-change-[opacity,transform] ${
-                highlight ? 'text-[#2F5CE6]' : 'text-[#1A7D8C]'
-            }`}
+            style={{ opacity, y, color }}
+            className="mr-[0.23em] inline-block will-change-[opacity,transform]"
         >
             {word}
         </motion.span>
@@ -506,14 +532,18 @@ function ManifestoSection() {
                                 1,
                                 start + (1 / words.length) * 2.2,
                             );
-                            const isFinalWord = idx === words.length - 1;
+                            const color = getManifestoWordColor(
+                                words.length > 1
+                                    ? idx / (words.length - 1)
+                                    : 0,
+                            );
                             return (
                                 <WordRevealItem
                                     key={`${word}-${idx}`}
                                     word={word}
                                     progress={smoothProgress}
                                     range={[start, end]}
-                                    highlight={isFinalWord}
+                                    color={color}
                                 />
                             );
                         })}
@@ -556,9 +586,9 @@ function StatsEditorialSection({
                 <div className="grid lg:grid-cols-12">
                     {/* Right-Shifted Editorial Column (~75% width, matching reference) */}
                     <div className="lg:col-span-9 lg:col-start-4">
-                        {/* Top 4-Line Staggered Headline with Inline Micro-Captions */}
-                        <div className="text-[#0D1219]">
-                            {/* Line 1: Left small label + indented giant text */}
+                        {/* Top 4-Line Staggered Headline with Calm Sentence-Case Tone */}
+                        <div className="text-[#104B56]">
+                            {/* Line 1: Left small label + indented calm heading */}
                             <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2 sm:flex-nowrap sm:gap-x-12">
                                 <motion.span
                                     initial={{ opacity: 0, y: 10 }}
@@ -571,7 +601,7 @@ function StatsEditorialSection({
                                         duration: 0.5,
                                         ease: smoothEase,
                                     }}
-                                    className="shrink-0 font-mono text-xs font-medium text-[#4A5D6E]"
+                                    className="shrink-0 font-mono text-xs font-medium text-[#476B76]"
                                 >
                                     Since 2025
                                 </motion.span>
@@ -587,15 +617,15 @@ function StatsEditorialSection({
                                             duration: 0.72,
                                             ease: smoothEase,
                                         }}
-                                        className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] uppercase"
+                                        className="block text-[clamp(2rem,4.6vw,3.85rem)] leading-[1.06] font-semibold tracking-[-0.03em]"
                                     >
-                                        WE HAVE BEEN HELPING
+                                        We&apos;ve been helping
                                     </motion.span>
                                 </span>
                             </div>
 
                             {/* Line 2 */}
-                            <span className="mt-1 block overflow-hidden">
+                            <span className="mt-0.5 block overflow-hidden">
                                 <motion.span
                                     initial={{ y: '105%' }}
                                     animate={
@@ -606,14 +636,14 @@ function StatsEditorialSection({
                                         delay: 0.08,
                                         ease: smoothEase,
                                     }}
-                                    className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] uppercase"
+                                    className="block text-[clamp(2rem,4.6vw,3.85rem)] leading-[1.06] font-semibold tracking-[-0.03em]"
                                 >
-                                    COMMUNITIES WITH
+                                    communities run
                                 </motion.span>
                             </span>
 
                             {/* Line 3 */}
-                            <span className="mt-1 block overflow-hidden">
+                            <span className="mt-0.5 block overflow-hidden">
                                 <motion.span
                                     initial={{ y: '105%' }}
                                     animate={
@@ -624,14 +654,14 @@ function StatsEditorialSection({
                                         delay: 0.16,
                                         ease: smoothEase,
                                     }}
-                                    className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] text-[#1A7D8C] uppercase"
+                                    className="block text-[clamp(2rem,4.6vw,3.85rem)] leading-[1.06] font-semibold tracking-[-0.03em] text-[#1A7D8C]"
                                 >
-                                    EFFORTLESS VOLUNTEER
+                                    effortless volunteer
                                 </motion.span>
                             </span>
 
                             {/* Line 4 + Right-Aligned Micro-Caption */}
-                            <div className="mt-1 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="mt-0.5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                                 <span className="block overflow-hidden">
                                     <motion.span
                                         initial={{ y: '105%' }}
@@ -645,9 +675,9 @@ function StatsEditorialSection({
                                             delay: 0.24,
                                             ease: smoothEase,
                                         }}
-                                        className="block text-[clamp(2rem,5.2vw,4.25rem)] leading-[0.95] font-black tracking-[-0.04em] uppercase"
+                                        className="block text-[clamp(2rem,4.6vw,3.85rem)] leading-[1.06] font-semibold tracking-[-0.03em]"
                                     >
-                                        OPERATIONS
+                                        operations.
                                     </motion.span>
                                 </span>
 
@@ -663,11 +693,11 @@ function StatsEditorialSection({
                                         delay: 0.3,
                                         ease: smoothEase,
                                     }}
-                                    className="max-w-[230px] text-left text-[11px] leading-snug text-[#4A5D6E] sm:pb-1 sm:text-right"
+                                    className="max-w-[240px] text-left text-xs leading-relaxed text-[#476B76] sm:pb-1 sm:text-right"
                                 >
-                                    based on structured recruitment, division
-                                    workspaces, zero-overlap shifts and QR + GPS
-                                    check-ins
+                                    through structured recruitment, division
+                                    workspaces, zero-overlap shifts, and QR +
+                                    GPS check-ins.
                                 </motion.p>
                             </div>
                         </div>
@@ -686,11 +716,11 @@ function StatsEditorialSection({
                                     delay: 0.25,
                                     ease: smoothEase,
                                 }}
-                                className="max-w-[215px] text-xs leading-relaxed text-[#425566]"
+                                className="max-w-[235px] text-xs leading-relaxed text-[#426671]"
                             >
                                 Community events move fast and volunteer teams
                                 are always evolving — we keep every division
-                                aligned.
+                                calm and aligned.
                             </motion.p>
 
                             <motion.p
@@ -705,7 +735,7 @@ function StatsEditorialSection({
                                     delay: 0.32,
                                     ease: smoothEase,
                                 }}
-                                className="max-w-[225px] text-xs leading-relaxed text-[#425566] sm:ml-auto sm:text-right"
+                                className="max-w-[240px] text-xs leading-relaxed text-[#426671] sm:ml-auto sm:text-right"
                             >
                                 Built with conflict-free shift guards and
                                 Haversine GPS so organizers stay effortlessly in
@@ -760,7 +790,7 @@ function StatsEditorialSection({
                                                 delay: 0.2 + idx * 0.1,
                                                 ease: smoothEase,
                                             }}
-                                            className="font-sans text-[clamp(4.4rem,9.2vw,7.4rem)] leading-[0.82] font-black tracking-[-0.055em] text-white transition-colors duration-300 select-none group-hover:text-[#1A7D8C]"
+                                            className="font-sans text-[clamp(4.2rem,8.8vw,7rem)] leading-[0.84] font-bold tracking-[-0.045em] text-white transition-colors duration-300 select-none group-hover:text-[#135D6A]"
                                         >
                                             <AnimatedCounter
                                                 target={metric.value}
@@ -769,7 +799,7 @@ function StatsEditorialSection({
                                             />
                                         </motion.p>
                                     </div>
-                                    <p className="mt-2.5 text-xs font-medium text-[#354858]">
+                                    <p className="mt-2.5 text-xs font-medium text-[#3C616C]">
                                         {metric.caption}
                                     </p>
                                 </div>
@@ -829,7 +859,7 @@ function HeroVisualStage({
                 {/* Subtle Floating Telemetry Chips */}
                 <motion.div
                     style={{ y: chipLeftY }}
-                    className="pointer-events-none absolute bottom-4 left-4 hidden items-center gap-2.5 rounded-full border border-white/80 bg-white/90 px-4 py-2 text-xs font-semibold text-[#0D1219] shadow-[0_12px_30px_-10px_rgba(13,18,25,0.18)] backdrop-blur-md sm:flex"
+                    className="pointer-events-none absolute bottom-4 left-4 hidden items-center gap-2.5 rounded-full border border-white/80 bg-white/90 px-4 py-2 text-xs font-semibold text-[#104B56] shadow-[0_12px_30px_-10px_rgba(16,75,86,0.16)] backdrop-blur-md sm:flex"
                 >
                     <span className="flex size-2 rounded-full bg-[#0E838F] ring-4 ring-[#0E838F]/20" />
                     <span>{volunteers}+ verified volunteers</span>
@@ -837,10 +867,10 @@ function HeroVisualStage({
 
                 <motion.div
                     style={{ y: chipRightY }}
-                    className="pointer-events-none absolute top-4 right-4 hidden items-center gap-2 rounded-full border border-white/80 bg-[#0D1219]/90 px-4 py-2 font-mono text-[11px] font-medium text-white shadow-[0_12px_30px_-10px_rgba(13,18,25,0.3)] backdrop-blur-md sm:flex"
+                    className="pointer-events-none absolute top-4 right-4 hidden items-center gap-2 rounded-full border border-white/60 bg-[#104B56]/90 px-4 py-2 font-mono text-[11px] font-medium text-white shadow-[0_12px_30px_-10px_rgba(16,75,86,0.28)] backdrop-blur-md sm:flex"
                 >
-                    <Sparkles className="size-3.5 text-[#7CC0C9]" />
-                    <span>{events} ACTIVE EVENTS · 0% OVERLAP</span>
+                    <Sparkles className="size-3.5 text-[#9AD9E2]" />
+                    <span>{events} active events · 0% overlap</span>
                 </motion.div>
             </motion.div>
         </div>
@@ -886,15 +916,15 @@ function PillarCard({
                 {/* Editorial Metadata */}
                 <div className="px-1.5 pt-5 pb-1.5">
                     <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-xl font-bold tracking-[-0.02em] text-[#0D1219] transition-colors group-hover:text-[#1A7D8C] sm:text-2xl">
+                        <h3 className="text-xl font-semibold tracking-[-0.02em] text-[#104B56] transition-colors group-hover:text-[#1A7D8C] sm:text-[1.4rem]">
                             {pillar.title}
                         </h3>
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#DCE7EF] bg-[#F4F8FA] text-[#0D1219] transition-all duration-300 group-hover:rotate-45 group-hover:border-[#0E838F] group-hover:bg-gradient-to-tr group-hover:from-[#0E838F] group-hover:to-[#2F5CE6] group-hover:text-white">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#DCE7EF] bg-[#F4F8FA] text-[#104B56] transition-all duration-300 group-hover:rotate-45 group-hover:border-[#0E838F] group-hover:bg-gradient-to-tr group-hover:from-[#0E838F] group-hover:to-[#2F5CE6] group-hover:text-white">
                             <ArrowUpRight className="size-4" />
                         </span>
                     </div>
 
-                    <p className="mt-2.5 text-sm leading-relaxed text-[#526577]">
+                    <p className="mt-2.5 text-sm leading-relaxed text-[#4C6E79]">
                         {pillar.description}
                     </p>
 
@@ -902,7 +932,7 @@ function PillarCard({
                         {pillar.tags.map((tag) => (
                             <span
                                 key={tag}
-                                className="rounded-full border border-[#DCE7EF] bg-[#F6FAFC] px-3 py-1 font-mono text-[11px] font-medium text-[#4A5D6E] transition-colors group-hover:border-[#1A7D8C]/25 group-hover:text-[#1A7D8C]"
+                                className="rounded-full border border-[#DCE7EF] bg-[#F6FAFC] px-3 py-1 font-mono text-[11px] font-medium text-[#476B76] transition-colors group-hover:border-[#1A7D8C]/25 group-hover:text-[#1A7D8C]"
                             >
                                 {tag}
                             </span>
@@ -962,12 +992,12 @@ export default function Welcome({
             <Head title="VolunSync — Community Event & Volunteer Platform" />
             <ScrollProgressBar />
 
-            <div className="min-h-screen overflow-x-clip bg-[#F4F8FA] text-[#0D1219] selection:bg-[#1A7D8C]/20 selection:text-[#0D1219]">
+            <div className="min-h-screen overflow-x-clip bg-[#F4F8FA] text-[#104B56] selection:bg-[#1A7D8C]/20 selection:text-[#104B56]">
                 {/* Minimal Editorial Floating Navbar (two26.studio rhythm) */}
                 <header
                     className={`fixed top-0 right-0 left-0 z-40 transition-all duration-300 ${
                         scrolled
-                            ? 'border-b border-[#DCE7EF]/90 bg-[#F4F8FA]/85 py-3 shadow-[0_8px_30px_-18px_rgba(13,18,25,0.14)] backdrop-blur-xl'
+                            ? 'border-b border-[#DCE7EF]/90 bg-[#F4F8FA]/85 py-3 shadow-[0_8px_30px_-18px_rgba(16,75,86,0.12)] backdrop-blur-xl'
                             : 'bg-transparent py-5'
                     }`}
                 >
@@ -976,13 +1006,13 @@ export default function Welcome({
                         <nav className="flex items-center gap-2">
                             <a
                                 href="#pillars"
-                                className="rounded-full border border-[#DCE7EF] bg-white/85 px-3.5 py-1.5 text-xs font-semibold text-[#0D1219] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
+                                className="rounded-full border border-[#DCE7EF] bg-white/85 px-3.5 py-1.5 text-xs font-semibold text-[#104B56] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
                             >
                                 Features
                             </a>
                             <Link
                                 href="/events"
-                                className="rounded-full border border-[#DCE7EF] bg-white/85 px-3.5 py-1.5 text-xs font-semibold text-[#0D1219] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
+                                className="rounded-full border border-[#DCE7EF] bg-white/85 px-3.5 py-1.5 text-xs font-semibold text-[#104B56] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
                             >
                                 Open events
                             </Link>
@@ -1003,10 +1033,10 @@ export default function Welcome({
                                     href="/login"
                                     className="hidden flex-col text-right leading-tight sm:flex"
                                 >
-                                    <span className="text-[11px] font-bold text-[#0D1219] transition-colors hover:text-[#1A7D8C]">
+                                    <span className="text-[11px] font-bold text-[#104B56] transition-colors hover:text-[#1A7D8C]">
                                         Member Access
                                     </span>
-                                    <span className="text-[10px] text-[#64748B]">
+                                    <span className="text-[10px] text-[#557782]">
                                         Sign in to console
                                     </span>
                                 </Link>
@@ -1019,7 +1049,7 @@ export default function Welcome({
                             >
                                 <Link
                                     href={user ? '/dashboard' : '/register'}
-                                    className="group inline-flex items-center gap-2.5 rounded-full bg-[#0D1219] py-1.5 pr-1.5 pl-4 text-xs font-semibold text-white shadow-[0_10px_24px_-12px_rgba(13,18,25,0.5)]"
+                                    className="group inline-flex items-center gap-2.5 rounded-full bg-[#104B56] py-1.5 pr-1.5 pl-4 text-xs font-semibold text-white shadow-[0_10px_24px_-12px_rgba(16,75,86,0.45)] transition-colors hover:bg-[#145C69]"
                                 >
                                     <span>
                                         {user ? 'Open console' : 'Get started'}
@@ -1135,7 +1165,7 @@ export default function Welcome({
                                 </span>
                             </h1>
 
-                            {/* Mini Info Pill 1 — Top-Right over "EVENTS THAT RUN" */}
+                            {/* Mini Info Pill 1 — Top-Right over DARK "EVENTS THAT RUN" → Light Teal Pill */}
                             <motion.span
                                 style={{ y: heroBadgeY }}
                                 initial={{ opacity: 0, scale: 0.7, rotate: -9 }}
@@ -1147,12 +1177,12 @@ export default function Welcome({
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
-                                className="absolute top-[4%] right-[6%] z-10 cursor-default rounded-full bg-[#0D1219] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-white shadow-[0_12px_26px_-10px_rgba(13,18,25,0.5)] sm:top-[6%] sm:right-[17%] sm:px-5 sm:py-1.5 sm:text-xs"
+                                className="absolute top-[4%] right-[6%] z-10 cursor-default rounded-full border border-[#8FD3DC] bg-[#CDEEF2] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-[#0E4D59] shadow-[0_12px_26px_-10px_rgba(14,77,89,0.2)] sm:top-[6%] sm:right-[17%] sm:px-5 sm:py-1.5 sm:text-xs"
                             >
                                 Community event platform
                             </motion.span>
 
-                            {/* Mini Info Pill 2 — Mid-Left between "EVENTS THAT RUN" & "SUSPICIOUSLY" */}
+                            {/* Mini Info Pill 2 — Mid-Left over DARK "EVENTS THAT RUN" & "SUSPICIOUSLY" → Light Teal Pill */}
                             <motion.span
                                 style={{ y: heroBadgeY }}
                                 initial={{ opacity: 0, scale: 0.7, rotate: 8 }}
@@ -1164,12 +1194,12 @@ export default function Welcome({
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
-                                className="absolute top-[30%] left-[6%] z-10 cursor-default rounded-full bg-gradient-to-r from-[#1D6BC4] to-[#2F5CE6] px-3 py-1 font-mono text-[10px] font-bold tracking-wider text-white uppercase shadow-[0_12px_28px_-8px_rgba(47,92,230,0.6)] sm:top-[31%] sm:left-[18%] sm:px-4 sm:py-1.5 sm:text-[11px]"
+                                className="absolute top-[30%] left-[6%] z-10 cursor-default rounded-full border border-[#8FD3DC] bg-[#CDEEF2] px-3 py-1 font-mono text-[10px] font-bold tracking-wider text-[#0E4D59] uppercase shadow-[0_12px_26px_-10px_rgba(14,77,89,0.2)] sm:top-[31%] sm:left-[18%] sm:px-4 sm:py-1.5 sm:text-[11px]"
                             >
                                 QR + GPS · RBAC
                             </motion.span>
 
-                            {/* Mini Info Pill 3 — Lower-Right between "SUSPICIOUSLY" & "SMOOTH" */}
+                            {/* Mini Info Pill 3 — Lower-Right over LIGHT "SMOOTH" → Dark Teal Pill */}
                             <motion.span
                                 style={{ y: heroBadgeY }}
                                 initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
@@ -1181,7 +1211,7 @@ export default function Welcome({
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
-                                className="absolute right-[8%] bottom-[13%] z-10 cursor-default rounded-full bg-[#0E838F] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-white shadow-[0_12px_26px_-10px_rgba(14,131,143,0.55)] sm:right-[21%] sm:bottom-[15%] sm:px-4.5 sm:py-1.5 sm:text-xs"
+                                className="absolute right-[8%] bottom-[13%] z-10 cursor-default rounded-full bg-[#0F4D59] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-white shadow-[0_12px_26px_-10px_rgba(15,77,89,0.45)] sm:right-[21%] sm:bottom-[15%] sm:px-4.5 sm:py-1.5 sm:text-xs"
                             >
                                 Zero double-booking
                             </motion.span>
@@ -1196,16 +1226,16 @@ export default function Welcome({
                                 delay: 0.34,
                                 ease: smoothEase,
                             }}
-                            className="mt-7 grid items-center gap-4 text-xs text-[#526577] md:grid-cols-12"
+                            className="mt-7 grid items-center gap-4 text-xs text-[#4C6E79] md:grid-cols-12"
                         >
-                            <p className="hidden text-left font-medium text-[#0D1219] md:col-span-3 md:block">
+                            <p className="hidden text-left font-medium text-[#104B56] md:col-span-3 md:block">
                                 We orchestrate volunteering
                             </p>
-                            <p className="mx-auto max-w-md text-sm leading-relaxed text-[#526577] md:col-span-6">
+                            <p className="mx-auto max-w-md text-sm leading-relaxed text-[#4C6E79] md:col-span-6">
                                 Replace spreadsheets and group chats with one
                                 calm dashboard for every community event.
                             </p>
-                            <p className="hidden text-right font-medium text-[#0D1219] md:col-span-3 md:block">
+                            <p className="hidden text-right font-medium text-[#104B56] md:col-span-3 md:block">
                                 No double-booking
                             </p>
                         </motion.div>
@@ -1228,10 +1258,10 @@ export default function Welcome({
                             >
                                 <Link
                                     href="/events"
-                                    className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#0E838F] via-[#1C6EC7] to-[#2F5CE6] py-2 pr-2 pl-6 text-sm font-semibold text-white shadow-[0_14px_30px_-12px_rgba(30,110,199,0.55)]"
+                                    className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#0E838F] via-[#1C6EC7] to-[#2F5CE6] py-2 pr-2 pl-6 text-sm font-semibold text-white shadow-[0_14px_30px_-12px_rgba(30,110,199,0.5)]"
                                 >
                                     <span>Explore open events</span>
-                                    <span className="flex size-8 items-center justify-center rounded-full bg-white text-[#0D1219] transition-transform duration-300 group-hover:rotate-45">
+                                    <span className="flex size-8 items-center justify-center rounded-full bg-white text-[#104B56] transition-transform duration-300 group-hover:rotate-45">
                                         <ArrowUpRight className="size-4" />
                                     </span>
                                 </Link>
@@ -1244,7 +1274,7 @@ export default function Welcome({
                             >
                                 <Link
                                     href={user ? '/dashboard' : '/login'}
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#CBD9E4] bg-white px-6 py-3 text-sm font-semibold text-[#0D1219] shadow-xs transition-colors hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
+                                    className="inline-flex items-center gap-2 rounded-full border border-[#CBD9E4] bg-white px-6 py-3 text-sm font-semibold text-[#104B56] shadow-xs transition-colors hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
                                 >
                                     {user
                                         ? 'Open my dashboard'
@@ -1281,24 +1311,36 @@ export default function Welcome({
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, amount: 0.6 }}
                             transition={{ duration: 0.5, ease: smoothEase }}
-                            className="font-mono text-[11px] font-semibold tracking-[0.22em] text-[#5B6D7E] uppercase"
+                            className="font-mono text-[11px] font-medium tracking-[0.18em] text-[#4C727D] uppercase"
                         >
                             What&apos;s inside
                         </motion.p>
-                        <div className="relative mt-2 inline-block">
-                            <motion.h2
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, amount: 0.6 }}
-                                transition={{
-                                    duration: 0.7,
-                                    ease: smoothEase,
-                                }}
-                                className="font-display text-5xl leading-none tracking-[-0.01em] text-[#1A7D8C] uppercase sm:text-7xl"
-                            >
-                                FOUR PILLARS
-                            </motion.h2>
-                        </div>
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.6 }}
+                            transition={{
+                                duration: 0.7,
+                                ease: smoothEase,
+                            }}
+                            className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#104B56] sm:text-5xl"
+                        >
+                            Four pillars, one calm flow.
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 14 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.6 }}
+                            transition={{
+                                duration: 0.6,
+                                delay: 0.08,
+                                ease: smoothEase,
+                            }}
+                            className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#4C6E79] sm:text-base"
+                        >
+                            Every module connects cleanly so organizers and
+                            volunteers stay on the same page without friction.
+                        </motion.p>
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2 lg:gap-8">
@@ -1412,18 +1454,18 @@ export default function Welcome({
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, amount: 0.6 }}
                             transition={{ duration: 0.5, ease: smoothEase }}
-                            className="font-mono text-[11px] font-semibold tracking-[0.22em] text-[#5B6D7E] uppercase"
+                            className="font-mono text-[11px] font-medium tracking-[0.18em] text-[#4C727D] uppercase"
                         >
                             Four stages, one platform
                         </motion.p>
                         <motion.h2
-                            initial={{ opacity: 0, y: 24 }}
+                            initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, amount: 0.6 }}
                             transition={{ duration: 0.7, ease: smoothEase }}
-                            className="mt-2 font-display text-5xl leading-none tracking-[-0.01em] text-[#0D1219] uppercase sm:text-7xl"
+                            className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#104B56] sm:text-5xl"
                         >
-                            THE VOLUNTEER JOURNEY
+                            The volunteer journey
                         </motion.h2>
                     </div>
 
@@ -1444,7 +1486,7 @@ export default function Welcome({
                                         delay: idx * 0.08,
                                         ease: smoothEase,
                                     }}
-                                    className="relative flex min-h-[225px] flex-col justify-between overflow-hidden rounded-[1.75rem] border border-[#DCE7EF] bg-white p-6 text-left shadow-[0_10px_28px_-20px_rgba(13,18,25,0.16)] transition-colors"
+                                    className="relative flex min-h-[225px] flex-col justify-between overflow-hidden rounded-[1.75rem] border border-[#DCE7EF] bg-white p-6 text-left shadow-[0_10px_28px_-20px_rgba(16,75,86,0.14)] transition-colors"
                                 >
                                     {isActive && (
                                         <motion.div
@@ -1459,7 +1501,7 @@ export default function Welcome({
                                     )}
 
                                     <span
-                                        className={`relative z-10 font-display text-5xl leading-none transition-colors duration-300 ${
+                                        className={`relative z-10 text-4xl leading-none font-semibold tracking-[-0.03em] transition-colors duration-300 ${
                                             isActive
                                                 ? 'text-white'
                                                 : 'text-[#1A7D8C]'
@@ -1470,10 +1512,10 @@ export default function Welcome({
 
                                     <div className="relative z-10 mt-8">
                                         <h3
-                                            className={`text-lg font-bold tracking-tight transition-colors duration-300 ${
+                                            className={`text-lg font-semibold tracking-tight transition-colors duration-300 ${
                                                 isActive
                                                     ? 'text-white'
-                                                    : 'text-[#0D1219]'
+                                                    : 'text-[#104B56]'
                                             }`}
                                         >
                                             {stage.title}
@@ -1482,7 +1524,7 @@ export default function Welcome({
                                             className={`mt-2 text-xs leading-relaxed transition-colors duration-300 sm:text-[13px] ${
                                                 isActive
                                                     ? 'text-white/85'
-                                                    : 'text-[#526577]'
+                                                    : 'text-[#4C6E79]'
                                             }`}
                                         >
                                             {stage.description}
@@ -1502,12 +1544,12 @@ export default function Welcome({
                         className="mt-10 rounded-3xl border border-[#DCE7EF] bg-white/85 p-4 backdrop-blur-sm sm:p-5"
                     >
                         <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-3">
-                            <span className="font-mono text-[11px] font-semibold tracking-[0.16em] text-[#1A7D8C] uppercase">
-                                Instant Demo Access · Click email to copy
+                            <span className="font-mono text-[11px] font-medium tracking-[0.14em] text-[#1A7D8C] uppercase">
+                                Instant demo access · Click email to copy
                             </span>
-                            <span className="font-mono text-[11px] text-[#5B6D7E]">
+                            <span className="font-mono text-[11px] text-[#4C6E79]">
                                 Password:{' '}
-                                <strong className="text-[#0D1219]">
+                                <strong className="text-[#104B56]">
                                     password
                                 </strong>
                             </span>
@@ -1521,14 +1563,14 @@ export default function Welcome({
                                     className="group flex items-center justify-between gap-3 rounded-2xl border border-[#DCE7EF] bg-[#F6FAFC] px-4 py-3 text-left transition-all hover:border-[#1A7D8C]/40 hover:bg-white"
                                 >
                                     <div className="min-w-0">
-                                        <p className="text-xs font-bold text-[#0D1219]">
+                                        <p className="text-xs font-semibold text-[#104B56]">
                                             {item.role}
                                         </p>
-                                        <p className="truncate font-mono text-[11px] text-[#5B6D7E]">
+                                        <p className="truncate font-mono text-[11px] text-[#4C6E79]">
                                             {item.email}
                                         </p>
                                     </div>
-                                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-[#526577] ring-1 ring-[#DCE7EF] transition-colors group-hover:text-[#1A7D8C]">
+                                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-[#4C6E79] ring-1 ring-[#DCE7EF] transition-colors group-hover:text-[#1A7D8C]">
                                         {copiedEmail === item.email ? (
                                             <Check className="size-3.5 text-[#0E838F]" />
                                         ) : (
@@ -1541,66 +1583,65 @@ export default function Welcome({
                     </motion.div>
                 </section>
 
-                {/* GIANT DARK ROUNDED-TOP EDITORIAL FOOTER */}
+                {/* CALM DEEP-TEAL ROUNDED-TOP EDITORIAL FOOTER */}
                 <motion.footer
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.15 }}
                     transition={{ duration: 0.8, ease: smoothEase }}
-                    className="relative overflow-hidden rounded-t-[2.5rem] bg-[#0D1219] text-white sm:rounded-t-[3.5rem]"
+                    className="relative overflow-hidden rounded-t-[2.5rem] bg-gradient-to-br from-[#0F4D59] via-[#135D6B] to-[#176E7F] text-white sm:rounded-t-[3.5rem]"
                 >
                     {/* Subtle Ambient Brand Glow */}
                     <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute -top-28 right-10 size-96 rounded-full bg-gradient-to-br from-[#0E838F]/20 via-[#1C6EC7]/15 to-transparent blur-3xl"
+                        className="pointer-events-none absolute -top-28 right-10 size-96 rounded-full bg-gradient-to-br from-[#7BC0C9]/25 via-[#2F5CE6]/20 to-transparent blur-3xl"
                     />
 
                     <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-10 sm:px-8 sm:pt-24 sm:pb-12">
                         <div className="grid items-end gap-12 lg:grid-cols-12">
-                            {/* Left Giant Condensed Statement */}
+                            {/* Left Calm Statement */}
                             <div className="lg:col-span-7">
-                                <h2 className="font-display text-[clamp(3.2rem,9.5vw,6.8rem)] leading-[0.88] tracking-[-0.015em] uppercase">
+                                <h2 className="text-[clamp(2.6rem,6vw,4.6rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
                                     <span className="block text-white">
-                                        WANT TO
+                                        Want to run a
                                     </span>
-                                    <span className="block text-white">
-                                        RUN A
-                                    </span>
-                                    <span className="block text-[#7BC0C9]">
-                                        CALMER
-                                    </span>
-                                    <span className="block text-[#7BC0C9]">
-                                        EVENT?
+                                    <span className="block text-[#9AD9E2]">
+                                        calmer event?
                                     </span>
                                 </h2>
+                                <p className="mt-5 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">
+                                    Bring recruitment, division workspaces,
+                                    conflict-free shifts, and verified check-ins
+                                    into one peaceful rhythm.
+                                </p>
                             </div>
 
                             {/* Right Contact & Pill CTA */}
-                            <div className="space-y-6 lg:col-span-5 lg:pb-3">
-                                <p className="text-lg font-medium text-white/85">
+                            <div className="space-y-6 lg:col-span-5 lg:pb-2">
+                                <p className="text-lg font-medium text-white/90">
                                     or just say hello!
                                 </p>
 
                                 <div className="space-y-4">
                                     <div>
-                                        <p className="font-mono text-[10px] tracking-[0.18em] text-white/45 uppercase">
+                                        <p className="font-mono text-[10px] tracking-[0.18em] text-white/55 uppercase">
                                             Organizers &amp; Partnerships
                                         </p>
                                         <a
                                             href="mailto:hello@volunsync.app"
-                                            className="mt-1 inline-block text-base font-semibold text-white transition-colors hover:text-[#7BC0C9]"
+                                            className="mt-1 inline-block text-base font-semibold text-white transition-colors hover:text-[#9AD9E2]"
                                         >
                                             hello@volunsync.app
                                         </a>
                                     </div>
 
                                     <div>
-                                        <p className="font-mono text-[10px] tracking-[0.18em] text-white/45 uppercase">
+                                        <p className="font-mono text-[10px] tracking-[0.18em] text-white/55 uppercase">
                                             Volunteer Support
                                         </p>
                                         <a
                                             href="mailto:support@volunsync.app"
-                                            className="mt-1 inline-block text-base font-semibold text-white transition-colors hover:text-[#7BC0C9]"
+                                            className="mt-1 inline-block text-base font-semibold text-white transition-colors hover:text-[#9AD9E2]"
                                         >
                                             support@volunsync.app
                                         </a>
@@ -1615,7 +1656,7 @@ export default function Welcome({
                                 >
                                     <Link
                                         href={user ? '/dashboard' : '/register'}
-                                        className="group inline-flex items-center gap-3 rounded-full bg-white py-2 pr-2 pl-6 text-sm font-semibold text-[#0D1219] shadow-[0_14px_34px_-12px_rgba(255,255,255,0.28)]"
+                                        className="group inline-flex items-center gap-3 rounded-full bg-white py-2 pr-2 pl-6 text-sm font-semibold text-[#104B56] shadow-[0_14px_34px_-12px_rgba(10,45,52,0.35)]"
                                     >
                                         <span>
                                             {user
@@ -1631,7 +1672,7 @@ export default function Welcome({
                         </div>
 
                         {/* Bottom Bar */}
-                        <div className="mt-16 flex flex-col justify-between gap-4 border-t border-white/10 pt-8 text-xs text-white/50 sm:flex-row sm:items-center">
+                        <div className="mt-16 flex flex-col justify-between gap-4 border-t border-white/15 pt-8 text-xs text-white/65 sm:flex-row sm:items-center">
                             <span className="text-sm font-bold tracking-tight text-white">
                                 VolunSync
                             </span>
@@ -1655,7 +1696,7 @@ export default function Welcome({
                                 >
                                     Register
                                 </Link>
-                                <span className="text-white/35">
+                                <span className="text-white/50">
                                     Community Volunteer Management Platform · ©
                                     2026 VolunSync
                                 </span>
