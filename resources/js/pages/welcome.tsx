@@ -5,7 +5,6 @@ import {
     Check,
     Copy,
     MapPin,
-    Sparkles,
 } from 'lucide-react';
 import {
     MotionConfig,
@@ -19,6 +18,7 @@ import {
     type MotionValue,
 } from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { HeroVideoCanvas } from '@/components/hero-video-canvas';
 import { SplashScreen } from '@/components/splash-screen';
 import type { Auth } from '@/types';
 
@@ -604,7 +604,7 @@ function StatsEditorialSection({
                                     }}
                                     className="shrink-0 font-mono text-xs font-medium text-[#476B76]"
                                 >
-                                    Since 2025
+                                    Built for communities
                                 </motion.span>
                                 <span className="block overflow-hidden">
                                     <motion.span
@@ -620,7 +620,7 @@ function StatsEditorialSection({
                                         }}
                                         className="block text-[clamp(2rem,4.6vw,3.85rem)] leading-[1.06] font-semibold tracking-[-0.03em]"
                                     >
-                                        We&apos;ve been helping
+                                        Designed to help
                                     </motion.span>
                                 </span>
                             </div>
@@ -744,36 +744,36 @@ function StatsEditorialSection({
                             </motion.p>
                         </div>
 
-                        {/* Bottom 2x2 Giant Clipped-Baseline Numbers Grid */}
+                        {/* Bottom 2x2 Giant Clipped-Baseline Numbers Grid — Architectural Benchmarks */}
                         <div className="mt-14 grid grid-cols-1 gap-x-12 gap-y-12 sm:mt-20 sm:grid-cols-2 lg:pl-16">
                             {[
                                 {
-                                    value: stats.volunteers,
-                                    suffix: '+',
+                                    value: 0,
+                                    suffix: '%',
                                     padZero: false,
                                     caption:
-                                        'confirmed volunteers active across divisions',
+                                        'schedule double-booking with server conflict guards',
                                 },
                                 {
                                     value: stats.events,
                                     suffix: '',
                                     padZero: true,
                                     caption:
-                                        'open and ongoing community events',
+                                        'community events configured in pilot testbed',
                                 },
                                 {
-                                    value: stats.shifts,
-                                    suffix: '+',
+                                    value: 50,
+                                    suffix: 'M',
                                     padZero: false,
                                     caption:
-                                        'conflict-free scheduled division shifts',
+                                        'Haversine GPS geofence radius for verified check-in',
                                 },
                                 {
-                                    value: stats.verified_hours,
-                                    suffix: 'H',
+                                    value: 100,
+                                    suffix: '%',
                                     padZero: false,
                                     caption:
-                                        'verified service hours logged via QR + GPS',
+                                        'automated service-hour logs via dynamic QR',
                                 },
                             ].map((metric, idx) => (
                                 <div key={metric.caption} className="group">
@@ -810,77 +810,6 @@ function StatsEditorialSection({
                 </div>
             </div>
         </section>
-    );
-}
-
-function HeroVisualStage({
-    volunteers,
-    events,
-    ready = true,
-}: {
-    volunteers: number;
-    events: number;
-    ready?: boolean;
-}) {
-    'use no memo';
-    const stageRef = useRef<HTMLDivElement | null>(null);
-    const { scrollYProgress } = useScroll({
-        target: stageRef,
-        offset: ['start end', 'end start'],
-    });
-    const smoothScroll = useSpring(scrollYProgress, {
-        stiffness: 110,
-        damping: 26,
-    });
-    const imageY = useTransform(smoothScroll, [0, 1], [28, -28]);
-    const imageScale = useTransform(smoothScroll, [0, 0.5, 1], [0.96, 1.02, 1]);
-    const chipLeftY = useTransform(smoothScroll, [0, 1], [22, -26]);
-    const chipRightY = useTransform(smoothScroll, [0, 1], [-14, 24]);
-
-    return (
-        <div
-            ref={stageRef}
-            className="relative mx-auto mt-10 max-w-5xl px-4 sm:mt-14 sm:px-6"
-        >
-            <motion.div
-                initial={{ opacity: 0, y: 44, scale: 0.96 }}
-                animate={
-                    ready
-                        ? { opacity: 1, y: 0, scale: 1 }
-                        : { opacity: 0, y: 44, scale: 0.96 }
-                }
-                transition={{ duration: 0.9, delay: 0.54, ease: smoothEase }}
-                className="relative overflow-hidden rounded-[2rem] border border-[#DCE7EF] bg-[#EDF4F8] shadow-[0_28px_70px_-30px_rgba(14,131,143,0.22)] sm:rounded-[2.75rem]"
-            >
-                <motion.div
-                    style={{ y: imageY, scale: imageScale }}
-                    className="will-change-transform"
-                >
-                    <img
-                        src="/images/landing-hero-3d.jpg"
-                        alt="VolunSync 3D community event coordination diorama"
-                        className="aspect-[16/9] w-full object-cover"
-                    />
-                </motion.div>
-
-                {/* Subtle Floating Telemetry Chips */}
-                <motion.div
-                    style={{ y: chipLeftY }}
-                    className="pointer-events-none absolute bottom-4 left-4 hidden items-center gap-2.5 rounded-full border border-white/80 bg-white/90 px-4 py-2 text-xs font-semibold text-[#104B56] shadow-[0_12px_30px_-10px_rgba(16,75,86,0.16)] backdrop-blur-md sm:flex"
-                >
-                    <span className="flex size-2 rounded-full bg-[#0E838F] ring-4 ring-[#0E838F]/20" />
-                    <span>{volunteers}+ verified volunteers</span>
-                </motion.div>
-
-                <motion.div
-                    style={{ y: chipRightY }}
-                    className="pointer-events-none absolute top-4 right-4 hidden items-center gap-2 rounded-full border border-white/60 bg-[#104B56]/90 px-4 py-2 font-mono text-[11px] font-medium text-white shadow-[0_12px_30px_-10px_rgba(16,75,86,0.28)] backdrop-blur-md sm:flex"
-                >
-                    <Sparkles className="size-3.5 text-[#9AD9E2]" />
-                    <span>{events} active events · 0% overlap</span>
-                </motion.div>
-            </motion.div>
-        </div>
     );
 }
 
@@ -964,7 +893,7 @@ export default function Welcome({
     'use no memo';
     const { auth } = usePage<{ auth: Auth }>().props;
     const user = auth?.user;
-    const [activeStage, setActiveStage] = useState(3);
+    const [hoveredStage, setHoveredStage] = useState<number | null>(null);
     const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
     const [scrolled, setScrolled] = useState(false);
     const [heroReady, setHeroReady] = useState(false);
@@ -1081,15 +1010,15 @@ export default function Welcome({
                     </div>
                 </motion.header>
 
-                {/* HERO SECTION */}
+                {/* HERO SECTION — exact two26.studio editorial composition */}
                 <section
                     ref={heroRef}
-                    className="relative pt-28 pb-6 sm:pt-36 sm:pb-10"
+                    className="relative flex min-h-screen flex-col justify-between overflow-hidden pt-20 sm:pt-24"
                 >
-                    <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
-                        {/* Giant Condensed Stacked Headline with 3 Overlaid Mini Info Pills */}
-                        <div className="relative mt-2 inline-block w-full select-none">
-                            <h1 className="font-display text-[clamp(3.35rem,11.2vw,8.6rem)] leading-[0.88] tracking-[-0.015em] uppercase">
+                    {/* Top: Giant Condensed Stacked Headline + 3 Overlaid Mini Info Pills */}
+                    <div className="relative z-10 mx-auto w-full max-w-6xl px-4 text-center sm:px-6 lg:px-8">
+                        <div className="relative mt-1 inline-block w-full select-none">
+                            <h1 className="font-display text-[clamp(3.5rem,11vw,8.6rem)] leading-[0.88] tracking-[-0.015em] uppercase">
                                 <span className="block overflow-hidden">
                                     <motion.span
                                         initial={{ y: '108%' }}
@@ -1173,7 +1102,7 @@ export default function Welcome({
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
-                                className="absolute top-[4%] right-[6%] z-10 cursor-default rounded-full border border-[#8FD3DC] bg-[#CDEEF2] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-[#0E4D59] shadow-[0_12px_26px_-10px_rgba(14,77,89,0.2)] sm:top-[6%] sm:right-[17%] sm:px-5 sm:py-1.5 sm:text-xs"
+                                className="absolute top-[4%] right-[6%] z-10 cursor-default rounded-full border border-[#8FD3DC] bg-[#CDEEF2] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-[#0E4D59] shadow-[0_12px_26px_-10px_rgba(14,77,89,0.2)] sm:top-[6%] sm:right-[19%] sm:px-5 sm:py-1.5 sm:text-xs"
                             >
                                 Community event platform
                             </motion.span>
@@ -1202,7 +1131,7 @@ export default function Welcome({
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
-                                className="absolute top-[30%] left-[6%] z-10 cursor-default rounded-full border border-[#8FD3DC] bg-[#CDEEF2] px-3 py-1 font-mono text-[10px] font-bold tracking-wider text-[#0E4D59] uppercase shadow-[0_12px_26px_-10px_rgba(14,77,89,0.2)] sm:top-[31%] sm:left-[18%] sm:px-4 sm:py-1.5 sm:text-[11px]"
+                                className="absolute top-[30%] left-[6%] z-10 cursor-default rounded-full border border-[#8FD3DC] bg-[#CDEEF2] px-3 py-1 font-mono text-[10px] font-bold tracking-wider text-[#0E4D59] uppercase shadow-[0_12px_26px_-10px_rgba(14,77,89,0.2)] sm:top-[31%] sm:left-[20%] sm:px-4 sm:py-1.5 sm:text-[11px]"
                             >
                                 QR + GPS · RBAC
                             </motion.span>
@@ -1231,93 +1160,79 @@ export default function Welcome({
                                     damping: 20,
                                 }}
                                 whileHover={{ rotate: 0, scale: 1.08 }}
-                                className="absolute right-[8%] bottom-[13%] z-10 cursor-default rounded-full bg-[#0F4D59] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-white shadow-[0_12px_26px_-10px_rgba(15,77,89,0.45)] sm:right-[21%] sm:bottom-[15%] sm:px-4.5 sm:py-1.5 sm:text-xs"
+                                className="absolute right-[8%] bottom-[13%] z-10 cursor-default rounded-full bg-[#0F4D59] px-3.5 py-1 text-[10px] font-semibold tracking-wide text-white shadow-[0_12px_26px_-10px_rgba(15,77,89,0.45)] sm:right-[22%] sm:bottom-[15%] sm:px-4.5 sm:py-1.5 sm:text-xs"
                             >
                                 Zero double-booking
                             </motion.span>
                         </div>
+                    </div>
 
-                        {/* Flanking Micro-Captions + Centered Subtitle */}
+                    {/* Center Stage: Transparent-background Walking Volunteers Video right below headline (two26.studio layout) */}
+                    <div className="relative mx-auto -mt-4 flex w-full max-w-6xl flex-1 items-end justify-center px-4 sm:-mt-8 sm:px-6 lg:px-8">
+                        {/* Subtle Left Micro-Caption (flanking the characters) */}
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 16 }}
                             animate={
                                 heroReady
                                     ? { opacity: 1, y: 0 }
-                                    : { opacity: 0, y: 20 }
-                            }
-                            transition={{
-                                duration: 0.72,
-                                delay: 0.44,
-                                ease: smoothEase,
-                            }}
-                            className="mt-7 grid items-center gap-4 text-xs text-[#4C6E79] md:grid-cols-12"
-                        >
-                            <p className="hidden text-left font-medium text-[#104B56] md:col-span-3 md:block">
-                                We orchestrate volunteering
-                            </p>
-                            <p className="mx-auto max-w-md text-sm leading-relaxed text-[#4C6E79] md:col-span-6">
-                                Replace spreadsheets and group chats with one
-                                calm dashboard for every community event.
-                            </p>
-                            <p className="hidden text-right font-medium text-[#104B56] md:col-span-3 md:block">
-                                No double-booking
-                            </p>
-                        </motion.div>
-
-                        {/* Dual Hero CTAs */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={
-                                heroReady
-                                    ? { opacity: 1, y: 0 }
-                                    : { opacity: 0, y: 20 }
+                                    : { opacity: 0, y: 16 }
                             }
                             transition={{
                                 duration: 0.72,
                                 delay: 0.52,
                                 ease: smoothEase,
                             }}
-                            className="mt-7 flex flex-wrap items-center justify-center gap-3"
+                            className="pointer-events-none absolute bottom-10 left-6 z-20 hidden max-w-[210px] text-left lg:block"
                         >
-                            <motion.div
-                                whileHover={{ scale: 1.04 }}
-                                whileTap={{ scale: 0.97 }}
-                                transition={springSnappy}
-                            >
-                                <Link
-                                    href="/events"
-                                    className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#0E838F] via-[#1C6EC7] to-[#2F5CE6] py-2 pr-2 pl-6 text-sm font-semibold text-white shadow-[0_14px_30px_-12px_rgba(30,110,199,0.5)]"
-                                >
-                                    <span>Explore open events</span>
-                                    <span className="flex size-8 items-center justify-center rounded-full bg-white text-[#104B56] transition-transform duration-300 group-hover:rotate-45">
-                                        <ArrowUpRight className="size-4" />
-                                    </span>
-                                </Link>
-                            </motion.div>
+                            <p className="text-xs font-semibold text-[#104B56]">
+                                We orchestrate volunteering
+                            </p>
+                            <p className="mt-1 text-xs leading-relaxed text-[#4C6E79]">
+                                One calm dashboard for every community event.
+                            </p>
+                        </motion.div>
 
-                            <motion.div
-                                whileHover={{ scale: 1.04 }}
-                                whileTap={{ scale: 0.97 }}
-                                transition={springSnappy}
-                            >
-                                <Link
-                                    href={user ? '/dashboard' : '/login'}
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#CBD9E4] bg-white px-6 py-3 text-sm font-semibold text-[#104B56] shadow-xs transition-colors hover:border-[#1A7D8C]/40 hover:text-[#1A7D8C]"
-                                >
-                                    {user
-                                        ? 'Open my dashboard'
-                                        : 'Sign in to console'}
-                                </Link>
-                            </motion.div>
+                        {/* Center Walking Volunteers Video with Real-Time Background Removal */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 48 }}
+                            animate={
+                                heroReady
+                                    ? { opacity: 1, y: 0 }
+                                    : { opacity: 0, y: 48 }
+                            }
+                            transition={{
+                                duration: 0.95,
+                                delay: 0.44,
+                                ease: smoothEase,
+                            }}
+                            className="relative z-10 mx-auto w-full max-w-[780px] lg:max-w-[860px]"
+                        >
+                            <HeroVideoCanvas src="/videos/hero-volunteers.mp4" />
+                        </motion.div>
+
+                        {/* Subtle Right Micro-Caption (mirroring the left side) */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={
+                                heroReady
+                                    ? { opacity: 1, y: 0 }
+                                    : { opacity: 0, y: 16 }
+                            }
+                            transition={{
+                                duration: 0.72,
+                                delay: 0.58,
+                                ease: smoothEase,
+                            }}
+                            className="pointer-events-none absolute right-6 bottom-10 z-20 hidden max-w-[210px] text-right lg:block"
+                        >
+                            <p className="text-xs font-semibold text-[#104B56]">
+                                No double-booking
+                            </p>
+                            <p className="mt-1 text-xs leading-relaxed text-[#4C6E79]">
+                                Conflict-free shifts with verified QR check-ins.
+                            </p>
                         </motion.div>
                     </div>
-
-                    {/* Hero 3D Studio Visual Stage */}
-                    <HeroVisualStage
-                        volunteers={stats.volunteers}
-                        events={stats.events}
-                        ready={heroReady}
-                    />
                 </section>
 
                 {/* ASYMMETRIC CURVED MARQUEE RIBBON — BEFORE MANIFESTO */}
@@ -1498,15 +1413,16 @@ export default function Welcome({
                         </motion.h2>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div
+                        onMouseLeave={() => setHoveredStage(null)}
+                        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                    >
                         {journeyStages.map((stage, idx) => {
-                            const isActive = activeStage === idx;
+                            const isHovered = hoveredStage === idx;
                             return (
-                                <motion.button
+                                <motion.div
                                     key={stage.num}
-                                    type="button"
-                                    onMouseEnter={() => setActiveStage(idx)}
-                                    onClick={() => setActiveStage(idx)}
+                                    onMouseEnter={() => setHoveredStage(idx)}
                                     initial={{ opacity: 0, y: 28 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true, amount: 0.25 }}
@@ -1515,23 +1431,26 @@ export default function Welcome({
                                         delay: idx * 0.08,
                                         ease: smoothEase,
                                     }}
-                                    className="relative flex min-h-[225px] flex-col justify-between overflow-hidden rounded-[1.75rem] border border-[#DCE7EF] bg-white p-6 text-left shadow-[0_10px_28px_-20px_rgba(16,75,86,0.14)] transition-colors"
+                                    className="group relative flex min-h-[225px] cursor-default flex-col justify-between overflow-hidden rounded-[1.75rem] border border-[#DCE7EF] bg-white p-6 text-left shadow-[0_10px_28px_-20px_rgba(16,75,86,0.14)] transition-all duration-300 hover:-translate-y-1 hover:border-[#104B56]/40 hover:shadow-[0_20px_40px_-15px_rgba(16,75,86,0.32)]"
                                 >
-                                    {isActive && (
+                                    {isHovered && (
                                         <motion.div
-                                            layoutId="journeyActiveCard"
+                                            layoutId="journeyHoverCard"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
                                             transition={{
                                                 type: 'spring',
-                                                stiffness: 310,
-                                                damping: 30,
+                                                stiffness: 350,
+                                                damping: 32,
                                             }}
-                                            className="absolute inset-0 bg-gradient-to-br from-[#0E838F] via-[#1C6EC7] to-[#2F5CE6]"
+                                            className="absolute inset-0 bg-gradient-to-br from-[#104B56] via-[#125562] to-[#1A7D8C]"
                                         />
                                     )}
 
                                     <span
                                         className={`relative z-10 text-4xl leading-none font-semibold tracking-[-0.03em] transition-colors duration-300 ${
-                                            isActive
+                                            isHovered
                                                 ? 'text-white'
                                                 : 'text-[#1A7D8C]'
                                         }`}
@@ -1542,7 +1461,7 @@ export default function Welcome({
                                     <div className="relative z-10 mt-8">
                                         <h3
                                             className={`text-lg font-semibold tracking-tight transition-colors duration-300 ${
-                                                isActive
+                                                isHovered
                                                     ? 'text-white'
                                                     : 'text-[#104B56]'
                                             }`}
@@ -1551,15 +1470,15 @@ export default function Welcome({
                                         </h3>
                                         <p
                                             className={`mt-2 text-xs leading-relaxed transition-colors duration-300 sm:text-[13px] ${
-                                                isActive
-                                                    ? 'text-white/85'
+                                                isHovered
+                                                    ? 'text-white/90'
                                                     : 'text-[#4C6E79]'
                                             }`}
                                         >
                                             {stage.description}
                                         </p>
                                     </div>
-                                </motion.button>
+                                </motion.div>
                             );
                         })}
                     </div>
